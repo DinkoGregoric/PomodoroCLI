@@ -1,0 +1,93 @@
+# ==============================
+# Build results
+# ==============================
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]ny [Cc]pu/
+[Ll]og/
+*.log
+
+# .NET artifacts
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.cache
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+# If you use packages.config, keep /packages/ ignored.
+# If you use PackageReference, /packages/ usually doesn't exist.
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# ==============================
+# Visual Studio / VS Code
+# ==============================
+.vs/
+.vscode/
+*.code-workspace
+
+# Visual Studio temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+
+# ==============================
+# JetBrains Rider / IntelliJ
+# ==============================
+.idea/
+*.sln.iml
+
+# ==============================
+# OS junk
+# ==============================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ==============================
+# Test results / coverage
+# ==============================
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+coverage.*.xml
+*.opencover.xml
+
+# ==============================
+# Publish output
+# ==============================
+**/publish/
+**/wwwroot/lib/
+
+# ==============================
+# User secrets / local settings (be careful)
+# ==============================
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json
+**/*.Local.*.json
+
+# Azure Functions local settings
+local.settings.json
+
+# ==============================
+# Copilot / AI instructions you don't want committed
+# (adjust to match your repo)
+# ==============================
+.github/copilot-instructions.md
+.github/copilot-instructions.txt
+copilot-instructions.md

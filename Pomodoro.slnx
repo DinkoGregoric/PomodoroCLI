@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Pomodoro.CLI/Pomodoro.CLI.csproj" />
+  <Project Path="Pomodoro.Core/Pomodoro.Core.csproj" />
+  <Project Path="Pomodoro.Infrastructure/Pomodoro.Infrastructure.csproj" Id="c50a190b-b84e-47c2-af25-e0378f4d3258" />
+</Solution>
