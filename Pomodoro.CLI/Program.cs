@@ -1,4 +1,4 @@
-﻿using Pomodoro.CLI;
+using Pomodoro.CLI;
 using Pomodoro.CLI.UseCases.Pomodoro;
 using Pomodoro.CLI.UseCases.Settings;
 using Pomodoro.CLI.Views;
@@ -9,37 +9,22 @@ using Pomodoro.Infrastructure;
 using Spectre.Console;
 
 var settingsProvider = new SettingsProvider();
-var dispatcher = new InMemoryCommandDispatcher();
-var engine = await PomodoroStateMachine.CreateAsync(settingsProvider, TimeProvider.System);
 
-// Everything related to Pomodoro core will be moved to DI in the Core package and then registered here as a method
-// Register state machine command handlers
-dispatcher.RegisterHandler(new StartCommandHandler(engine));
-dispatcher.RegisterHandler(new PauseCommandHandler(engine));
-dispatcher.RegisterHandler(new ResumeCommandHandler(engine));
-dispatcher.RegisterHandler(new AdvanceTimeCommandHandler(engine));
-dispatcher.RegisterHandler(new ResetPhaseCommandHandler(engine));
-dispatcher.RegisterHandler(new SkipPhaseCommandHandler(engine));
+// Settings dispatcher — created once, never needs recreating
+var settingsDispatcher = new InMemoryCommandDispatcher();
+settingsDispatcher.RegisterHandler(new GetSettingsCommandHandler(settingsProvider));
+settingsDispatcher.RegisterHandler(new SaveTimingSettingsCommandHandler(settingsProvider));
+settingsDispatcher.RegisterHandler(new SaveProgressionSettingsCommandHandler(settingsProvider));
+settingsDispatcher.RegisterHandler(new SaveNotificationSettingsCommandHandler(settingsProvider));
+settingsDispatcher.RegisterHandler(new SaveDiagnosticsSettingsCommandHandler(settingsProvider));
 
-// Register settings command handlers
-dispatcher.RegisterHandler(new GetSettingsCommandHandler(settingsProvider));
-dispatcher.RegisterHandler(new SaveTimingSettingsCommandHandler(settingsProvider));
-dispatcher.RegisterHandler(new SaveProgressionSettingsCommandHandler(settingsProvider));
-dispatcher.RegisterHandler(new SaveNotificationSettingsCommandHandler(settingsProvider));
-dispatcher.RegisterHandler(new SaveDiagnosticsSettingsCommandHandler(settingsProvider));
-
-var getSettingsUseCase = new GetSettingsUseCase(dispatcher);
-var saveSettingsUseCase = new SaveSettingsUseCase(dispatcher);
-
-var startUseCase = new StartUseCase(dispatcher);
-var pauseUseCase = new PauseUseCase(dispatcher);
-var resumeUseCase = new ResumeUseCase(dispatcher);
-var resetPhaseUseCase = new ResetUseCase(dispatcher);
-var skipPhaseUseCase = new SkipUseCase(dispatcher);
+var getSettingsUseCase = new GetSettingsUseCase(settingsDispatcher);
+var saveSettingsUseCase = new SaveSettingsUseCase(settingsDispatcher);
 
 var menuView = new StartMenuView();
-var pomodoroView = new PomodoroView(engine.State, dispatcher, startUseCase, pauseUseCase, resumeUseCase, resetPhaseUseCase, skipPhaseUseCase);
 var settingsView = new SettingsView(getSettingsUseCase, saveSettingsUseCase);
+
+var pomodoroView = await CreatePomodoroStack();
 
 while (true)
 {
@@ -55,7 +40,7 @@ while (true)
     {
         AnsiConsole.Clear();
         await settingsView.Display();
-        engine = await PomodoroStateMachine.CreateAsync(settingsProvider, TimeProvider.System);
+        pomodoroView = await CreatePomodoroStack();
         AnsiConsole.Clear();
     }
     else
@@ -66,3 +51,26 @@ while (true)
 
 AnsiConsole.Clear();
 AnsiConsole.Write(new Markup($"Thank you for using [bold red]Pomodoro CLI[/]🍅! Goodbye! 👋\n", Styles.Default));
+
+
+// Engine dispatcher + view — recreated after settings change
+async Task<PomodoroView> CreatePomodoroStack()
+{
+    var engine = await PomodoroStateMachine.CreateAsync(settingsProvider, TimeProvider.System);
+
+    var engineDispatcher = new InMemoryCommandDispatcher();
+    engineDispatcher.RegisterHandler(new StartCommandHandler(engine));
+    engineDispatcher.RegisterHandler(new PauseCommandHandler(engine));
+    engineDispatcher.RegisterHandler(new ResumeCommandHandler(engine));
+    engineDispatcher.RegisterHandler(new AdvanceTimeCommandHandler(engine));
+    engineDispatcher.RegisterHandler(new ResetPhaseCommandHandler(engine));
+    engineDispatcher.RegisterHandler(new SkipPhaseCommandHandler(engine));
+
+    var startUseCase = new StartUseCase(engineDispatcher);
+    var pauseUseCase = new PauseUseCase(engineDispatcher);
+    var resumeUseCase = new ResumeUseCase(engineDispatcher);
+    var resetPhaseUseCase = new ResetUseCase(engineDispatcher);
+    var skipPhaseUseCase = new SkipUseCase(engineDispatcher);
+
+    return new PomodoroView(TimeProvider.System, engine, engineDispatcher, startUseCase, pauseUseCase, resumeUseCase, resetPhaseUseCase, skipPhaseUseCase);
+}

@@ -1,12 +1,15 @@
 ﻿using Pomodoro.Core.Domain;
+using Pomodoro.Core.Events;
 using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.Core.Engine
 {
     public sealed class PomodoroStateMachine
     {
-        private PomodoroSettings _settings;
+        private readonly PomodoroSettings _settings;
         private readonly TimeProvider _timeProvider;
+
+        public event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
 
         public PomodoroState State { get; }
 
@@ -57,6 +60,8 @@ namespace Pomodoro.Core.Engine
                 var pausedDuration = _timeProvider.GetUtcNow() - State.PausedAtUtc.Value;
                 if (pausedDuration > TimeSpan.FromMinutes(_settings.Timing.MaxPhasePauseMinutes))
                 {
+                    var eventArgs = new SessionExpiredEventArgs(State.CurrentPhase, _settings.Timing.MaxPhasePauseMinutes);
+                    OnSessionExpired(eventArgs);
                     Reset();
                     return;
                 }
@@ -72,6 +77,8 @@ namespace Pomodoro.Core.Engine
                 var pausedDuration = _timeProvider.GetUtcNow() - State.PausedAtUtc.Value;
                 if (pausedDuration > TimeSpan.FromMinutes(_settings.Timing.MaxPhasePauseMinutes))
                 {
+                    var eventArgs = new SessionExpiredEventArgs(State.CurrentPhase, _settings.Timing.MaxPhasePauseMinutes);
+                    OnSessionExpired(eventArgs);
                     Reset();
                     return;
                 }
@@ -106,6 +113,11 @@ namespace Pomodoro.Core.Engine
             {
                 PrepareNextPhase();
             }
+        }
+
+        private void OnSessionExpired(SessionExpiredEventArgs e)
+        {
+            SessionExpiredDueToPauseTimeout?.Invoke(this, e);
         }
 
         private void PrepareNextPhase()
