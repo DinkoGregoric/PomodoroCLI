@@ -1,26 +1,20 @@
-﻿using Pomodoro.Core.Domain;
-using Pomodoro.Core.Commands.Settings;
+﻿using Pomodoro.Core.Commands.Settings;
+using Pomodoro.Core.Common;
+using Pomodoro.Core.Domain;
 using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.CLI.UseCases.Settings
 {
-    internal class SaveSettingsUseCase
+    internal class SaveSettingsUseCase(ICommandDispatcher dispatcher)
     {
-        private readonly ICommandDispatcher _dispatcher;
-
-        public SaveSettingsUseCase(ICommandDispatcher dispatcher)
-        {
-            _dispatcher = dispatcher;
-        }
-
-        public async Task ExecuteForTimingSettingsAsync(
+        internal Task<Result<PomodoroSettings>> ExecuteForTimingSettingsAsync(
             int workMinutes,
             int shortBreakMinutes,
             int longBreakMinutes,
             int longBreakInterval,
             int maxPhasePauseMinutes)
         {
-            await _dispatcher.DispatchAsync(new SaveTimingSettingsCommand(
+            return dispatcher.DispatchAsync(new SaveTimingSettingsCommand(
                 workMinutes,
                 shortBreakMinutes,
                 longBreakMinutes,
@@ -28,35 +22,35 @@ namespace Pomodoro.CLI.UseCases.Settings
                 maxPhasePauseMinutes));
         }
 
-        public async Task ExecuteForProgressionSettingsAsync(
+        internal Task<Result<PomodoroSettings>> ExecuteForProgressionSettingsAsync(
             bool progressionEnabled,
             int targetWorkMinutes,
             int stepMinutes,
             int requiredCompletionsToApplyStep)
         {
-            await _dispatcher.DispatchAsync(new SaveProgressionSettingsCommand(
+            return dispatcher.DispatchAsync(new SaveProgressionSettingsCommand(
                 progressionEnabled,
                 targetWorkMinutes,
                 stepMinutes,
                 requiredCompletionsToApplyStep));
         }
 
-        public async Task ExecuteForNotificationSettingsAsync(
+        internal Task<Result<PomodoroSettings>> ExecuteForNotificationSettingsAsync(
             bool enableNotifications,
             bool playSound,
             NotificationSound sound,
             int notificationVolume)
         {
-            await _dispatcher.DispatchAsync(new SaveNotificationSettingsCommand(
+            return dispatcher.DispatchAsync(new SaveNotificationSettingsCommand(
                 enableNotifications,
                 playSound,
                 sound,
                 notificationVolume));
         }
 
-        public async Task ExecuteForDiagnosticsSettingsAsync(bool enableEventLogging)
+        internal Task<Result<PomodoroSettings>> ExecuteForDiagnosticsSettingsAsync(bool enableEventLogging)
         {
-            await _dispatcher.DispatchAsync(new SaveDiagnosticsSettingsCommand(enableEventLogging));
+            return dispatcher.DispatchAsync(new SaveDiagnosticsSettingsCommand(enableEventLogging));
         }
     }
 }

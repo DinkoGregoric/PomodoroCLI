@@ -5,24 +5,35 @@ namespace Pomodoro.Core.Engine
 {
     public sealed class PomodoroStateMachine
     {
-        private readonly PomodoroSettings _settings;
+        private PomodoroSettings _settings;
         private readonly TimeProvider _timeProvider;
 
         public PomodoroState State { get; }
 
-        public PomodoroStateMachine(PomodoroSettings settings, TimeProvider timeProvider)
+        private PomodoroStateMachine(TimeProvider timeProvider, PomodoroSettings settings)
         {
             State = new PomodoroState();
-            _settings = settings;
             _timeProvider = timeProvider;
+            _settings = settings;
         }
 
-        public void Start()
+        public static async Task<PomodoroStateMachine> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
+        {
+            var settings = await settingsProvider.LoadSettingsAsync();
+            if (settings.IsFailure)
+            {
+                throw new InvalidOperationException("Failed to load settings: " + settings.Error.Message);
+            }
+
+            return new PomodoroStateMachine(timeProvider, settings.Value);
+        }
+
+        internal void Start()
         {
             if (State.IsRunning || State.PausedAtUtc != null)
             {
                 return;
-            } 
+            }
 
             if (State.CurrentPhase == Phase.Idle)
             {
@@ -31,7 +42,7 @@ namespace Pomodoro.Core.Engine
             State.PhaseStartTimeUtc = _timeProvider.GetUtcNow();
         }
 
-        public void Pause()
+        internal void Pause()
         {
             if (State.IsRunning && State.PausedAtUtc is null)
             {
@@ -39,7 +50,7 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        public void Resume()
+        internal void Resume()
         {
             if (State.PausedAtUtc != null)
             {
@@ -54,7 +65,7 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        public void Tick()
+        internal void Tick()
         {
             if (State.PausedAtUtc != null)
             {
@@ -80,7 +91,7 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        public void Reset()
+        internal void Reset()
         {
             State.CurrentPhase = Phase.Idle;
             State.PhaseStartTimeUtc = null;
@@ -89,7 +100,7 @@ namespace Pomodoro.Core.Engine
             State.PauseAccumulated = TimeSpan.Zero;
         }
 
-        public void Skip()
+        internal void Skip()
         {
             if (State.CurrentPhase != Phase.Idle)
             {
