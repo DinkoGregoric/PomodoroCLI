@@ -23,6 +23,8 @@ namespace Pomodoro.CLI.Views
         private readonly PomodoroState state = stateMachine.State;
         private int _spinnerIndex = 0;
         private string? _sessionExpiredMessage = null;
+        private string? _phaseCompletedMessage = null;
+        private CancellationTokenSource? _beepCts;
 
         internal async Task Display()
         {
@@ -39,6 +41,7 @@ namespace Pomodoro.CLI.Views
                 await start.ExecuteAsync();
 
                 stateMachine.SessionExpiredDueToPauseTimeout += OnSessionExpired;
+                stateMachine.PhaseCompleted += OnPhaseCompleted;
                 try
                 {
                     await AnsiConsole.Live(BuildDisplay())
@@ -53,7 +56,9 @@ namespace Pomodoro.CLI.Views
                                     switch (Console.ReadKey(intercept: true).Key)
                                     {
                                         case ConsoleKey.S:
+                                            _beepCts?.Cancel();
                                             _sessionExpiredMessage = null;
+                                            _phaseCompletedMessage = null;
                                             if (state.CurrentPhase == Phase.Idle || !state.PhaseStartTimeUtc.HasValue)
                                                 await start.ExecuteAsync();
                                             else if (state.IsRunning)
@@ -84,6 +89,8 @@ namespace Pomodoro.CLI.Views
                 finally
                 {
                     stateMachine.SessionExpiredDueToPauseTimeout -= OnSessionExpired;
+                    stateMachine.PhaseCompleted -= OnPhaseCompleted;
+                    _beepCts?.Cancel();
                 }
             }
         }
@@ -93,7 +100,32 @@ namespace Pomodoro.CLI.Views
             _sessionExpiredMessage = $"[red]Session reset: {e.Phase} phase paused longer than the allowed {e.MaxAllowedPauseDuration} minutes.[/]";
         }
 
-        private IRenderable BuildDisplay()
+        private void OnPhaseCompleted(object? sender, PhaseCompletedEventArgs e)
+        {
+            _phaseCompletedMessage = $"[green]{e.CompletedPhase} phase ended.[/] Press [[S]] to start {e.NextPhase}.";
+
+            if (!e.PlaySound)
+                return;
+
+            _beepCts?.Cancel();
+            _beepCts = new CancellationTokenSource();
+            _ = BeepAsync(_beepCts.Token);
+        }
+
+        private static async Task BeepAsync(CancellationToken ct)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                if (ct.IsCancellationRequested) return;
+                await Task.Run(Console.Beep, ct).ConfigureAwait(false);
+                if (i < 4)
+                {
+                    await Task.Delay(1000, ct).ConfigureAwait(false);
+                }
+            }
+        }
+
+        private Panel BuildDisplay()
         {
             var progress = ComputeProgress();
             var remaining = ComputeRemaining();
@@ -126,6 +158,8 @@ namespace Pomodoro.CLI.Views
                 new Markup(statusLine)
             };
 
+            if (_phaseCompletedMessage != null)
+                rows.Insert(3, new Markup(_phaseCompletedMessage));
             if (_sessionExpiredMessage != null)
                 rows.Insert(3, new Markup(_sessionExpiredMessage));
 

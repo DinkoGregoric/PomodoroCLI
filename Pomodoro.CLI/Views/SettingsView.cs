@@ -29,8 +29,7 @@ namespace Pomodoro.CLI.Views
 
                 var settings = settingsResult.Value;
 
-                AnsiConsole.Clear();
-                AnsiConsole.Write(new Markup($"[bold]Pomodoro Settings Configuration[/]\n\n", Styles.Default));
+                AnsiConsole.Write(new Markup($"\n[bold]Pomodoro Settings Configuration[/]\n\n", Styles.Default));
 
                 var settingCategoryCommand = AnsiConsole.Prompt(
                     new SelectionPrompt<CLICommand>()

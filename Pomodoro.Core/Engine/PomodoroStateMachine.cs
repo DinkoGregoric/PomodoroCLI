@@ -10,6 +10,7 @@ namespace Pomodoro.Core.Engine
         private readonly TimeProvider _timeProvider;
 
         public event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
+        public event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
 
         public PomodoroState State { get; }
 
@@ -93,7 +94,9 @@ namespace Pomodoro.Core.Engine
                     {
                         State.CompletedWorkSessionsCount++;
                     }
+                    var completedPhase = State.CurrentPhase;
                     PrepareNextPhase();
+                    PhaseCompleted?.Invoke(this, new PhaseCompletedEventArgs(completedPhase, State.CurrentPhase, _settings.Notifications.PlaySound));
                 }
             }
         }
