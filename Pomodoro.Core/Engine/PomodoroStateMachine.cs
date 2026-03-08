@@ -1,4 +1,5 @@
-﻿using Pomodoro.Core.Domain;
+﻿using Pomodoro.Core.Common;
+using Pomodoro.Core.Domain;
 using Pomodoro.Core.Events;
 using Pomodoro.Core.Interfaces;
 
@@ -21,15 +22,15 @@ namespace Pomodoro.Core.Engine
             _settings = settings;
         }
 
-        public static async Task<PomodoroStateMachine> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
+        public static async Task<Result<PomodoroStateMachine>> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
         {
             var settings = await settingsProvider.LoadSettingsAsync();
             if (settings.IsFailure)
             {
-                throw new InvalidOperationException("Failed to load settings: " + settings.Error.Message);
+                return Result<PomodoroStateMachine>.Failure(settings.Error);
             }
 
-            return new PomodoroStateMachine(timeProvider, settings.Value);
+            return Result<PomodoroStateMachine>.Success(new PomodoroStateMachine(timeProvider, settings.Value));
         }
 
         internal void Start()

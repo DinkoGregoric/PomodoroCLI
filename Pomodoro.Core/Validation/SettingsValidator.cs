@@ -1,6 +1,5 @@
-using Pomodoro.Core.Common;
 using Pomodoro.Core.Commands.Settings;
-using Pomodoro.Core.Domain;
+using Pomodoro.Core.Common;
 
 namespace Pomodoro.Core.Validation
 {

@@ -46,11 +46,13 @@ namespace Pomodoro.Infrastructure
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Result<PomodoroSettings>.Failure(new Error("Settings.AccessDenied", ex.Message));
+                var errorMessage = $"Access to settings file is denied. Please check permissions for: {SettingsPath}.\n{ex.Message}\n";
+                return Result<PomodoroSettings>.Failure(new Error("Settings.AccessDenied", errorMessage));
             }
             catch (IOException ex)
             {
-                return Result<PomodoroSettings>.Failure(new Error("Settings.LoadFailed", ex.Message));
+                var errorMessage = $"An I/O error occurred while accessing the settings file: {SettingsPath}.\n{ex.Message}\n";
+                return Result<PomodoroSettings>.Failure(new Error("Settings.LoadFailed", errorMessage));
             }
             finally
             {
@@ -82,11 +84,13 @@ namespace Pomodoro.Infrastructure
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Result.Failure(new Error("Settings.AccessDenied", ex.Message));
+                var errorMessage = $"Access to settings file is denied. Please check permissions for: {SettingsPath}.\n{ex.Message}\n";
+                return Result.Failure(new Error("Settings.AccessDenied", errorMessage));
             }
             catch (IOException ex)
             {
-                return Result.Failure(new Error("Settings.SaveFailed", ex.Message));
+                var errorMessage = $"An I/O error occurred while saving the settings file: {SettingsPath}.\n{ex.Message}\n";
+                return Result.Failure(new Error("Settings.SaveFailed", errorMessage));
             }
         }
 

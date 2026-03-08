@@ -56,15 +56,20 @@ AnsiConsole.Write(new Markup($"Thank you for using [bold red]Pomodoro CLI[/]🍅
 // Engine dispatcher + view — recreated after settings change
 async Task<PomodoroView> CreatePomodoroStack()
 {
-    var engine = await PomodoroStateMachine.CreateAsync(settingsProvider, TimeProvider.System);
+    var engineResult = await PomodoroStateMachine.CreateAsync(settingsProvider, TimeProvider.System);
+    if (engineResult.IsFailure)
+    {
+        AnsiConsole.Write(new Markup($"[red]Error loading settings:[/] {engineResult.Error.Message}\n"));
+        Environment.Exit(1);
+    }
 
     var engineDispatcher = new InMemoryCommandDispatcher();
-    engineDispatcher.RegisterHandler(new StartCommandHandler(engine));
-    engineDispatcher.RegisterHandler(new PauseCommandHandler(engine));
-    engineDispatcher.RegisterHandler(new ResumeCommandHandler(engine));
-    engineDispatcher.RegisterHandler(new AdvanceTimeCommandHandler(engine));
-    engineDispatcher.RegisterHandler(new ResetPhaseCommandHandler(engine));
-    engineDispatcher.RegisterHandler(new SkipPhaseCommandHandler(engine));
+    engineDispatcher.RegisterHandler(new StartCommandHandler(engineResult.Value));
+    engineDispatcher.RegisterHandler(new PauseCommandHandler(engineResult.Value));
+    engineDispatcher.RegisterHandler(new ResumeCommandHandler(engineResult.Value));
+    engineDispatcher.RegisterHandler(new AdvanceTimeCommandHandler(engineResult.Value));
+    engineDispatcher.RegisterHandler(new ResetPhaseCommandHandler(engineResult.Value));
+    engineDispatcher.RegisterHandler(new SkipPhaseCommandHandler(engineResult.Value));
 
     var startUseCase = new StartUseCase(engineDispatcher);
     var pauseUseCase = new PauseUseCase(engineDispatcher);
@@ -72,5 +77,5 @@ async Task<PomodoroView> CreatePomodoroStack()
     var resetPhaseUseCase = new ResetUseCase(engineDispatcher);
     var skipPhaseUseCase = new SkipUseCase(engineDispatcher);
 
-    return new PomodoroView(TimeProvider.System, engine, engineDispatcher, startUseCase, pauseUseCase, resumeUseCase, resetPhaseUseCase, skipPhaseUseCase);
+    return new PomodoroView(TimeProvider.System, engineResult.Value, engineDispatcher, startUseCase, pauseUseCase, resumeUseCase, resetPhaseUseCase, skipPhaseUseCase);
 }

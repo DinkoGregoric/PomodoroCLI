@@ -23,12 +23,13 @@ namespace Pomodoro.CLI.Views
 
                 if (settingsResult.IsFailure)
                 {
-                    AnsiConsole.Write(new Markup($"[red]Failed to load settings: {settingsResult.Error.Message}[/]\n"));
+                    AnsiConsole.Write(new Markup($"[red]Failed to load settings: {Markup.Escape(settingsResult.Error.Message)}[/]\n"));
                     break;
                 }
 
                 var settings = settingsResult.Value;
 
+                AnsiConsole.Clear();
                 AnsiConsole.Write(new Markup($"\n[bold]Pomodoro Settings Configuration[/]\n\n", Styles.Default));
 
                 var settingCategoryCommand = AnsiConsole.Prompt(
@@ -84,7 +85,7 @@ namespace Pomodoro.CLI.Views
                 new TextPrompt<int>($"[{Styles.Default.Foreground}]Long break interval (after how many work sessions):[/]")
                     .DefaultValue(settings.Timing.LongBreakInterval)
                     .ValidationErrorMessage($"[red]Please enter a valid number[/]")
-                    .Validate(m => m > 0 && m <= 10 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 10[/]")));
+                    .Validate(m => m > 1 && m <= 10 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 2 and 10[/]")));
 
             var maxPhasePauseMinutes = AnsiConsole.Prompt(
                 new TextPrompt<int>($"[{Styles.Default.Foreground}]Maximum pause duration before reset (minutes):[/]")
@@ -101,7 +102,8 @@ namespace Pomodoro.CLI.Views
 
             if (result.IsFailure)
             {
-                AnsiConsole.Write(new Markup($"[red]Failed to save timing settings: {result.Error.Message}[/]\n"));
+                AnsiConsole.Write(new Markup($"[red]Failed to save timing settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
             }
         }
 
@@ -121,7 +123,7 @@ namespace Pomodoro.CLI.Views
                     new TextPrompt<int>($"[{Styles.Default.Foreground}]Target work duration (minutes):[/]")
                         .DefaultValue(settings.Progression.TargetWorkMinutes)
                         .ValidationErrorMessage($"[red]Please enter a valid number[/]")
-                        .Validate(m => m > 0 && m <= 120 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 120[/]")));
+                        .Validate(m => m > 0 && m <= 180 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 180[/]")));
 
                 stepMinutes = AnsiConsole.Prompt(
                     new TextPrompt<int>($"[{Styles.Default.Foreground}]Step increase (minutes):[/]")
@@ -144,7 +146,8 @@ namespace Pomodoro.CLI.Views
 
             if (result.IsFailure)
             {
-                AnsiConsole.Write(new Markup($"[red]Failed to save progression settings: {result.Error.Message}[/]\n"));
+                AnsiConsole.Write(new Markup($"[red]Failed to save progression settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
             }
         }
 
@@ -158,7 +161,8 @@ namespace Pomodoro.CLI.Views
 
             if (result.IsFailure)
             {
-                AnsiConsole.Write(new Markup($"[red]Failed to save notification settings: {result.Error.Message}[/]\n"));
+                AnsiConsole.Write(new Markup($"[red]Failed to save notification settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
             }
         }
 
@@ -172,7 +176,8 @@ namespace Pomodoro.CLI.Views
 
             if (result.IsFailure)
             {
-                AnsiConsole.Write(new Markup($"[red]Failed to save diagnostics settings: {result.Error.Message}[/]\n"));
+                AnsiConsole.Write(new Markup($"[red]Failed to save diagnostics settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
             }
         }
     }
