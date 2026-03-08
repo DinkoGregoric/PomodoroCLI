@@ -1,36 +1,27 @@
 using Pomodoro.Core.Domain;
 using Pomodoro.Core.Interfaces;
 using Pomodoro.Core.Common;
+using Pomodoro.Core.Validation;
 
 namespace Pomodoro.Core.Commands.Settings
 {
-    public sealed class GetSettingsCommandHandler : ICommandHandler<GetSettingsCommand, Result<PomodoroSettings>>
+    public sealed class GetSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<GetSettingsCommand, Result<PomodoroSettings>>
     {
-        private readonly ISettingsProvider _settingsProvider;
-
-        public GetSettingsCommandHandler(ISettingsProvider settingsProvider)
-        {
-            _settingsProvider = settingsProvider;
-        }
-
         public Task<Result<PomodoroSettings>> HandleAsync(GetSettingsCommand command, CancellationToken cancellationToken = default)
         {
-            return _settingsProvider.LoadSettingsAsync();
+            return settingsProvider.LoadSettingsAsync();
         }
     }
 
-    public sealed class SaveTimingSettingsCommandHandler : ICommandHandler<SaveTimingSettingsCommand, Result<PomodoroSettings>>
+    public sealed class SaveTimingSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveTimingSettingsCommand, Result<PomodoroSettings>>
     {
-        private readonly ISettingsProvider _settingsProvider;
-
-        public SaveTimingSettingsCommandHandler(ISettingsProvider settingsProvider)
-        {
-            _settingsProvider = settingsProvider;
-        }
-
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveTimingSettingsCommand command, CancellationToken cancellationToken = default)
         {
-            var loadResult = await _settingsProvider.LoadSettingsAsync();
+            var validation = SettingsValidator.ValidateTiming(command);
+            if (validation.IsFailure)
+                return Result<PomodoroSettings>.Failure(validation.Error);
+
+            var loadResult = await settingsProvider.LoadSettingsAsync();
             if (loadResult.IsFailure)
             {
                 return loadResult;
@@ -46,25 +37,22 @@ namespace Pomodoro.Core.Commands.Settings
                 MaxPhasePauseMinutes = command.MaxPhasePauseMinutes
             };
 
-            var saveResult = await _settingsProvider.SaveSettingsAsync(settings);
+            var saveResult = await settingsProvider.SaveSettingsAsync(settings);
             return saveResult.IsFailure
                 ? Result<PomodoroSettings>.Failure(saveResult.Error)
                 : Result<PomodoroSettings>.Success(settings);
         }
     }
 
-    public sealed class SaveProgressionSettingsCommandHandler : ICommandHandler<SaveProgressionSettingsCommand, Result<PomodoroSettings>>
+    public sealed class SaveProgressionSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveProgressionSettingsCommand, Result<PomodoroSettings>>
     {
-        private readonly ISettingsProvider _settingsProvider;
-
-        public SaveProgressionSettingsCommandHandler(ISettingsProvider settingsProvider)
-        {
-            _settingsProvider = settingsProvider;
-        }
-
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveProgressionSettingsCommand command, CancellationToken cancellationToken = default)
         {
-            var loadResult = await _settingsProvider.LoadSettingsAsync();
+            var validation = SettingsValidator.ValidateProgression(command);
+            if (validation.IsFailure)
+                return Result<PomodoroSettings>.Failure(validation.Error);
+
+            var loadResult = await settingsProvider.LoadSettingsAsync();
             if (loadResult.IsFailure)
             {
                 return loadResult;
@@ -79,25 +67,18 @@ namespace Pomodoro.Core.Commands.Settings
                 RequiredCompletionsToApplyStep = command.RequiredCompletionsToApplyStep
             };
 
-            var saveResult = await _settingsProvider.SaveSettingsAsync(settings);
+            var saveResult = await settingsProvider.SaveSettingsAsync(settings);
             return saveResult.IsFailure
                 ? Result<PomodoroSettings>.Failure(saveResult.Error)
                 : Result<PomodoroSettings>.Success(settings);
         }
     }
 
-    public sealed class SaveNotificationSettingsCommandHandler : ICommandHandler<SaveNotificationSettingsCommand, Result<PomodoroSettings>>
+    public sealed class SaveNotificationSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveNotificationSettingsCommand, Result<PomodoroSettings>>
     {
-        private readonly ISettingsProvider _settingsProvider;
-
-        public SaveNotificationSettingsCommandHandler(ISettingsProvider settingsProvider)
-        {
-            _settingsProvider = settingsProvider;
-        }
-
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveNotificationSettingsCommand command, CancellationToken cancellationToken = default)
         {
-            var loadResult = await _settingsProvider.LoadSettingsAsync();
+            var loadResult = await settingsProvider.LoadSettingsAsync();
             if (loadResult.IsFailure)
             {
                 return loadResult;
@@ -106,31 +87,21 @@ namespace Pomodoro.Core.Commands.Settings
             var settings = loadResult.Value;
             settings.Notifications = new NotificationSettings
             {
-                EnableNotifications = command.EnableNotifications,
-                PlaySound = command.PlaySound,
-                Sound = command.Sound,
-                NotificationVolume = command.NotificationVolume
+                PlaySound = command.PlaySound
             };
 
-            var saveResult = await _settingsProvider.SaveSettingsAsync(settings);
+            var saveResult = await settingsProvider.SaveSettingsAsync(settings);
             return saveResult.IsFailure
                 ? Result<PomodoroSettings>.Failure(saveResult.Error)
                 : Result<PomodoroSettings>.Success(settings);
         }
     }
 
-    public sealed class SaveDiagnosticsSettingsCommandHandler : ICommandHandler<SaveDiagnosticsSettingsCommand, Result<PomodoroSettings>>
+    public sealed class SaveDiagnosticsSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveDiagnosticsSettingsCommand, Result<PomodoroSettings>>
     {
-        private readonly ISettingsProvider _settingsProvider;
-
-        public SaveDiagnosticsSettingsCommandHandler(ISettingsProvider settingsProvider)
-        {
-            _settingsProvider = settingsProvider;
-        }
-
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveDiagnosticsSettingsCommand command, CancellationToken cancellationToken = default)
         {
-            var loadResult = await _settingsProvider.LoadSettingsAsync();
+            var loadResult = await settingsProvider.LoadSettingsAsync();
             if (loadResult.IsFailure)
             {
                 return loadResult;
@@ -142,7 +113,7 @@ namespace Pomodoro.Core.Commands.Settings
                 EnableEventLogging = command.EnableEventLogging
             };
 
-            var saveResult = await _settingsProvider.SaveSettingsAsync(settings);
+            var saveResult = await settingsProvider.SaveSettingsAsync(settings);
             return saveResult.IsFailure
                 ? Result<PomodoroSettings>.Failure(saveResult.Error)
                 : Result<PomodoroSettings>.Success(settings);

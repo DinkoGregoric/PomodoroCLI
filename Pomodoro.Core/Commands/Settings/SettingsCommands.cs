@@ -20,10 +20,7 @@ namespace Pomodoro.Core.Commands.Settings
         int RequiredCompletionsToApplyStep) : ICommand<Result<PomodoroSettings>>;
 
     public sealed record SaveNotificationSettingsCommand(
-        bool EnableNotifications,
-        bool PlaySound,
-        NotificationSound Sound,
-        int NotificationVolume) : ICommand<Result<PomodoroSettings>>;
+        bool PlaySound) : ICommand<Result<PomodoroSettings>>;
 
     public sealed record SaveDiagnosticsSettingsCommand(bool EnableEventLogging) : ICommand<Result<PomodoroSettings>>;
 }

@@ -35,17 +35,9 @@ namespace Pomodoro.CLI.UseCases.Settings
                 requiredCompletionsToApplyStep));
         }
 
-        internal Task<Result<PomodoroSettings>> ExecuteForNotificationSettingsAsync(
-            bool enableNotifications,
-            bool playSound,
-            NotificationSound sound,
-            int notificationVolume)
+        internal Task<Result<PomodoroSettings>> ExecuteForNotificationSettingsAsync(bool playSound)
         {
-            return dispatcher.DispatchAsync(new SaveNotificationSettingsCommand(
-                enableNotifications,
-                playSound,
-                sound,
-                notificationVolume));
+            return dispatcher.DispatchAsync(new SaveNotificationSettingsCommand(playSound));
         }
 
         internal Task<Result<PomodoroSettings>> ExecuteForDiagnosticsSettingsAsync(bool enableEventLogging)

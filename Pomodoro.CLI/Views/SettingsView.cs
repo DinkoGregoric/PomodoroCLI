@@ -151,40 +151,11 @@ namespace Pomodoro.CLI.Views
 
         private async Task ConfigureNotificationSettings(PomodoroSettings settings)
         {
-            var enableNotifications = AnsiConsole.Confirm(
-                $"[{Styles.Default.Foreground}]Enable notifications?[/]",
-                settings.Notifications.EnableNotifications);
-
-            var playSound = settings.Notifications.PlaySound;
-            var sound = settings.Notifications.Sound;
-            var notificationVolume = settings.Notifications.NotificationVolume;
-
-            if (enableNotifications)
-            {
-                playSound = AnsiConsole.Confirm(
-                    $"[{Styles.Default.Foreground}]Play sound with notifications?[/]",
+            var playSound = AnsiConsole.Confirm(
+                    $"[{Styles.Default.Foreground}]Play sound after end of phase?[/]",
                     settings.Notifications.PlaySound);
 
-                if (playSound)
-                {
-                    sound = AnsiConsole.Prompt(
-                        new SelectionPrompt<NotificationSound>()
-                            .Title($"[{Styles.Default.Foreground}]Select notification sound:[/]")
-                            .AddChoices(NotificationSound.Sound1, NotificationSound.Sound2, NotificationSound.Sound3));
-
-                    notificationVolume = AnsiConsole.Prompt(
-                        new TextPrompt<int>($"[{Styles.Default.Foreground}]Notification volume (0-100):[/]")
-                            .DefaultValue(settings.Notifications.NotificationVolume)
-                            .ValidationErrorMessage($"[red]Please enter a valid number[/]")
-                            .Validate(v => v >= 0 && v <= 100 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 0 and 100[/]")));
-                }
-            }
-
-            var result = await _saveSettings.ExecuteForNotificationSettingsAsync(
-                enableNotifications,
-                playSound,
-                sound,
-                notificationVolume);
+            var result = await _saveSettings.ExecuteForNotificationSettingsAsync(playSound);
 
             if (result.IsFailure)
             {

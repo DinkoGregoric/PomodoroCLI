@@ -30,10 +30,7 @@
 
     public sealed class NotificationSettings
     {
-        public bool EnableNotifications { get; set; } = true;
         public bool PlaySound { get; set; } = true;
-        public NotificationSound Sound { get; set; } = NotificationSound.Sound1; 
-        public int NotificationVolume { get; set; } = 100;
     }
 
     public sealed class Information
@@ -48,10 +45,4 @@
         public bool EnableEventLogging { get; set; } = true;
     }
 
-    public enum NotificationSound
-    {
-        Sound1,
-        Sound2,
-        Sound3
-    }
 }
