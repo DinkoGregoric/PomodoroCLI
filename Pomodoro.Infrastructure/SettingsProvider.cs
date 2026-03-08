@@ -1,4 +1,5 @@
-﻿using Pomodoro.Core.Domain;
+﻿using Pomodoro.Core.Common;
+using Pomodoro.Core.Domain;
 using Pomodoro.Core.Interfaces;
 using System.Text.Json;
 
@@ -14,85 +15,93 @@ namespace Pomodoro.Infrastructure
 
         private static readonly SemaphoreSlim FileLock = new(1, 1);
 
-        public async Task<PomodoroSettings> LoadSettingsAsync()
+        public async Task<Result<PomodoroSettings>> LoadSettingsAsync()
         {
             await FileLock.WaitAsync();
             try
             {
                 if (!File.Exists(SettingsPath))
                 {
-                    FileLock.Release();
-                    return await CreateDefaultSettings();
+                    var defaults = new PomodoroSettings();
+                    var saveResult = await SaveCoreAsync(defaults);
+
+                    return saveResult.IsFailure
+                        ? Result<PomodoroSettings>.Failure(saveResult.Error)
+                        : Result<PomodoroSettings>.Success(defaults);
                 }
 
-                using var fileStream = File.OpenRead(SettingsPath);
+                await using var fileStream = File.OpenRead(SettingsPath);
                 var settings = await JsonSerializer.DeserializeAsync<PomodoroSettings>(fileStream, SerializerOptions);
 
-                if (settings is null)
+                if (settings is not null)
                 {
-                    // delete the corrupted file and create a new one with default settings
-                    File.Delete(SettingsPath);
-                    FileLock.Release();
-                    return await CreateDefaultSettings();
+                    return Result<PomodoroSettings>.Success(settings);
                 }
 
-                return settings;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                throw new InvalidOperationException($"Access denied when loading settings from {SettingsPath}", ex);
-            }
-            catch (IOException ex)
-            {
-                throw new InvalidOperationException($"Failed to load settings from {SettingsPath}", ex);
+                return await ResetToDefaultsAsync();
             }
             catch (JsonException)
             {
-                // Corrupted JSON - delete and recreate
-                File.Delete(SettingsPath);
-                FileLock.Release();
-                return await CreateDefaultSettings();
+                return await ResetToDefaultsAsync();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                var errorMessage = $"Access to settings file is denied. Please check permissions for: {SettingsPath}.\n{ex.Message}\n";
+                return Result<PomodoroSettings>.Failure(new Error("Settings.AccessDenied", errorMessage));
+            }
+            catch (IOException ex)
+            {
+                var errorMessage = $"An I/O error occurred while accessing the settings file: {SettingsPath}.\n{ex.Message}\n";
+                return Result<PomodoroSettings>.Failure(new Error("Settings.LoadFailed", errorMessage));
             }
             finally
             {
-                if (FileLock.CurrentCount == 0) // Ensure we only release if we actually acquired the lock
-                {
-                    FileLock.Release();
-                }
+                FileLock.Release();
             }
         }
 
-        public async Task SaveSettingsAsync(PomodoroSettings settings)
+        public async Task<Result> SaveSettingsAsync(PomodoroSettings settings)
         {
             await FileLock.WaitAsync();
             try
             {
-                Directory.CreateDirectory(SettingsDir);
-                using var fileStream = File.Create(SettingsPath);
-                await JsonSerializer.SerializeAsync(fileStream, settings, SerializerOptions);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                throw new InvalidOperationException($"Access denied when saving settings to {SettingsPath}", ex);
-            }
-            catch (IOException ex)
-            {
-                throw new InvalidOperationException($"Failed to save settings to {SettingsPath}", ex);
+                return await SaveCoreAsync(settings);
             }
             finally
             {
-                if (FileLock.CurrentCount == 0) // Ensure we only release if we actually acquired the lock
-                {
-                    FileLock.Release();
-                }
+                FileLock.Release();
             }
         }
 
-        private async Task<PomodoroSettings> CreateDefaultSettings()
+        private static async Task<Result> SaveCoreAsync(PomodoroSettings settings)
         {
-            var defaultSettings = new PomodoroSettings();
-            await SaveSettingsAsync(defaultSettings);
-            return defaultSettings;
+            try
+            {
+                Directory.CreateDirectory(SettingsDir);
+                await using var fileStream = File.Create(SettingsPath);
+                await JsonSerializer.SerializeAsync(fileStream, settings, SerializerOptions);
+                return Result.Success();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                var errorMessage = $"Access to settings file is denied. Please check permissions for: {SettingsPath}.\n{ex.Message}\n";
+                return Result.Failure(new Error("Settings.AccessDenied", errorMessage));
+            }
+            catch (IOException ex)
+            {
+                var errorMessage = $"An I/O error occurred while saving the settings file: {SettingsPath}.\n{ex.Message}\n";
+                return Result.Failure(new Error("Settings.SaveFailed", errorMessage));
+            }
+        }
+
+        private static async Task<Result<PomodoroSettings>> ResetToDefaultsAsync()
+        {
+            var defaults = new PomodoroSettings();
+            var saveResult = await SaveCoreAsync(defaults);
+
+            return saveResult.IsFailure
+                ? Result<PomodoroSettings>.Failure(saveResult.Error)
+                : Result<PomodoroSettings>.Success(defaults);
         }
     }
 }

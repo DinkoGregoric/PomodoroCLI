@@ -17,7 +17,7 @@
         public string Description { get; } = description;
     }
 
-    public enum CLICommandType
+    internal enum CLICommandType
     {
         StartPomodoro,
         ConfigureSettings,

@@ -91,3 +91,4 @@ local.settings.json
 .github/copilot-instructions.md
 .github/copilot-instructions.txt
 copilot-instructions.md
+.claude/

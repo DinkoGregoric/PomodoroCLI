@@ -1,4 +1,6 @@
-﻿using Pomodoro.Core.Domain;
+﻿using Pomodoro.Core.Common;
+using Pomodoro.Core.Domain;
+using Pomodoro.Core.Events;
 using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.Core.Engine
@@ -8,21 +10,35 @@ namespace Pomodoro.Core.Engine
         private readonly PomodoroSettings _settings;
         private readonly TimeProvider _timeProvider;
 
+        public event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
+        public event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
+
         public PomodoroState State { get; }
 
-        public PomodoroStateMachine(PomodoroSettings settings, TimeProvider timeProvider)
+        private PomodoroStateMachine(TimeProvider timeProvider, PomodoroSettings settings)
         {
             State = new PomodoroState();
-            _settings = settings;
             _timeProvider = timeProvider;
+            _settings = settings;
         }
 
-        public void Start()
+        public static async Task<Result<PomodoroStateMachine>> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
+        {
+            var settings = await settingsProvider.LoadSettingsAsync();
+            if (settings.IsFailure)
+            {
+                return Result<PomodoroStateMachine>.Failure(settings.Error);
+            }
+
+            return Result<PomodoroStateMachine>.Success(new PomodoroStateMachine(timeProvider, settings.Value));
+        }
+
+        internal void Start()
         {
             if (State.IsRunning || State.PausedAtUtc != null)
             {
                 return;
-            } 
+            }
 
             if (State.CurrentPhase == Phase.Idle)
             {
@@ -31,7 +47,7 @@ namespace Pomodoro.Core.Engine
             State.PhaseStartTimeUtc = _timeProvider.GetUtcNow();
         }
 
-        public void Pause()
+        internal void Pause()
         {
             if (State.IsRunning && State.PausedAtUtc is null)
             {
@@ -39,13 +55,15 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        public void Resume()
+        internal void Resume()
         {
             if (State.PausedAtUtc != null)
             {
                 var pausedDuration = _timeProvider.GetUtcNow() - State.PausedAtUtc.Value;
                 if (pausedDuration > TimeSpan.FromMinutes(_settings.Timing.MaxPhasePauseMinutes))
                 {
+                    var eventArgs = new SessionExpiredEventArgs(State.CurrentPhase, _settings.Timing.MaxPhasePauseMinutes);
+                    OnSessionExpired(eventArgs);
                     Reset();
                     return;
                 }
@@ -54,13 +72,15 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        public void Tick()
+        internal void Tick()
         {
             if (State.PausedAtUtc != null)
             {
                 var pausedDuration = _timeProvider.GetUtcNow() - State.PausedAtUtc.Value;
                 if (pausedDuration > TimeSpan.FromMinutes(_settings.Timing.MaxPhasePauseMinutes))
                 {
+                    var eventArgs = new SessionExpiredEventArgs(State.CurrentPhase, _settings.Timing.MaxPhasePauseMinutes);
+                    OnSessionExpired(eventArgs);
                     Reset();
                     return;
                 }
@@ -75,12 +95,14 @@ namespace Pomodoro.Core.Engine
                     {
                         State.CompletedWorkSessionsCount++;
                     }
+                    var completedPhase = State.CurrentPhase;
                     PrepareNextPhase();
+                    PhaseCompleted?.Invoke(this, new PhaseCompletedEventArgs(completedPhase, State.CurrentPhase, _settings.Notifications.PlaySound));
                 }
             }
         }
 
-        public void Reset()
+        internal void Reset()
         {
             State.CurrentPhase = Phase.Idle;
             State.PhaseStartTimeUtc = null;
@@ -89,12 +111,17 @@ namespace Pomodoro.Core.Engine
             State.PauseAccumulated = TimeSpan.Zero;
         }
 
-        public void Skip()
+        internal void Skip()
         {
             if (State.CurrentPhase != Phase.Idle)
             {
                 PrepareNextPhase();
             }
+        }
+
+        private void OnSessionExpired(SessionExpiredEventArgs e)
+        {
+            SessionExpiredDueToPauseTimeout?.Invoke(this, e);
         }
 
         private void PrepareNextPhase()

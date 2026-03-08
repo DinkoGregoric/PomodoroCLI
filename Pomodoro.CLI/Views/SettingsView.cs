@@ -19,10 +19,18 @@ namespace Pomodoro.CLI.Views
         {
             while (true)
             {
-                var settings = await _getSettings.ExecuteAsync();
+                var settingsResult = await _getSettings.ExecuteAsync();
+
+                if (settingsResult.IsFailure)
+                {
+                    AnsiConsole.Write(new Markup($"[red]Failed to load settings: {Markup.Escape(settingsResult.Error.Message)}[/]\n"));
+                    break;
+                }
+
+                var settings = settingsResult.Value;
 
                 AnsiConsole.Clear();
-                AnsiConsole.Write(new Markup($"[bold]Pomodoro Settings Configuration[/]\n\n", Styles.Default));
+                AnsiConsole.Write(new Markup($"\n[bold]Pomodoro Settings Configuration[/]\n\n", Styles.Default));
 
                 var settingCategoryCommand = AnsiConsole.Prompt(
                     new SelectionPrompt<CLICommand>()
@@ -77,7 +85,7 @@ namespace Pomodoro.CLI.Views
                 new TextPrompt<int>($"[{Styles.Default.Foreground}]Long break interval (after how many work sessions):[/]")
                     .DefaultValue(settings.Timing.LongBreakInterval)
                     .ValidationErrorMessage($"[red]Please enter a valid number[/]")
-                    .Validate(m => m > 0 && m <= 10 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 10[/]")));
+                    .Validate(m => m > 1 && m <= 10 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 2 and 10[/]")));
 
             var maxPhasePauseMinutes = AnsiConsole.Prompt(
                 new TextPrompt<int>($"[{Styles.Default.Foreground}]Maximum pause duration before reset (minutes):[/]")
@@ -85,12 +93,18 @@ namespace Pomodoro.CLI.Views
                     .ValidationErrorMessage($"[red]Please enter a valid number[/]")
                     .Validate(m => m > 0 && m <= 30 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 30[/]")));
 
-            await _saveSettings.ExecuteForTimingSettingsAsync(
+            var result = await _saveSettings.ExecuteForTimingSettingsAsync(
                 workMinutes,
                 shortBreakMinutes,
                 longBreakMinutes,
                 longBreakInterval,
                 maxPhasePauseMinutes);
+
+            if (result.IsFailure)
+            {
+                AnsiConsole.Write(new Markup($"[red]Failed to save timing settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
+            }
         }
 
         private async Task ConfigureProgressionSettings(PomodoroSettings settings)
@@ -109,7 +123,7 @@ namespace Pomodoro.CLI.Views
                     new TextPrompt<int>($"[{Styles.Default.Foreground}]Target work duration (minutes):[/]")
                         .DefaultValue(settings.Progression.TargetWorkMinutes)
                         .ValidationErrorMessage($"[red]Please enter a valid number[/]")
-                        .Validate(m => m > 0 && m <= 120 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 120[/]")));
+                        .Validate(m => m > 0 && m <= 180 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 180[/]")));
 
                 stepMinutes = AnsiConsole.Prompt(
                     new TextPrompt<int>($"[{Styles.Default.Foreground}]Step increase (minutes):[/]")
@@ -124,49 +138,32 @@ namespace Pomodoro.CLI.Views
                         .Validate(m => m > 0 && m <= 50 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 50[/]")));
             }
 
-            await _saveSettings.ExecuteForProgressionSettingsAsync(
+            var result = await _saveSettings.ExecuteForProgressionSettingsAsync(
                 progressionEnabled,
                 targetWorkMinutes,
                 stepMinutes,
                 requiredCompletionsToApplyStep);
+
+            if (result.IsFailure)
+            {
+                AnsiConsole.Write(new Markup($"[red]Failed to save progression settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
+            }
         }
 
         private async Task ConfigureNotificationSettings(PomodoroSettings settings)
         {
-            var enableNotifications = AnsiConsole.Confirm(
-                $"[{Styles.Default.Foreground}]Enable notifications?[/]",
-                settings.Notifications.EnableNotifications);
-
-            var playSound = settings.Notifications.PlaySound;
-            var sound = settings.Notifications.Sound;
-            var notificationVolume = settings.Notifications.NotificationVolume;
-
-            if (enableNotifications)
-            {
-                playSound = AnsiConsole.Confirm(
-                    $"[{Styles.Default.Foreground}]Play sound with notifications?[/]",
+            var playSound = AnsiConsole.Confirm(
+                    $"[{Styles.Default.Foreground}]Play sound after end of phase?[/]",
                     settings.Notifications.PlaySound);
 
-                if (playSound)
-                {
-                    sound = AnsiConsole.Prompt(
-                        new SelectionPrompt<NotificationSound>()
-                            .Title($"[{Styles.Default.Foreground}]Select notification sound:[/]")
-                            .AddChoices(NotificationSound.Sound1, NotificationSound.Sound2, NotificationSound.Sound3));
+            var result = await _saveSettings.ExecuteForNotificationSettingsAsync(playSound);
 
-                    notificationVolume = AnsiConsole.Prompt(
-                        new TextPrompt<int>($"[{Styles.Default.Foreground}]Notification volume (0-100):[/]")
-                            .DefaultValue(settings.Notifications.NotificationVolume)
-                            .ValidationErrorMessage($"[red]Please enter a valid number[/]")
-                            .Validate(v => v >= 0 && v <= 100 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 0 and 100[/]")));
-                }
+            if (result.IsFailure)
+            {
+                AnsiConsole.Write(new Markup($"[red]Failed to save notification settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
             }
-
-            await _saveSettings.ExecuteForNotificationSettingsAsync(
-                enableNotifications,
-                playSound,
-                sound,
-                notificationVolume);
         }
 
         private async Task ConfigureDiagnosticsSettings(PomodoroSettings settings)
@@ -175,7 +172,13 @@ namespace Pomodoro.CLI.Views
                 $"[{Styles.Default.Foreground}]Enable event logging?[/]",
                 settings.Diagnostics.EnableEventLogging);
 
-            await _saveSettings.ExecuteForDiagnosticsSettingsAsync(enableEventLogging);
+            var result = await _saveSettings.ExecuteForDiagnosticsSettingsAsync(enableEventLogging);
+
+            if (result.IsFailure)
+            {
+                AnsiConsole.Write(new Markup($"[red]Failed to save diagnostics settings: {Markup.Escape(result.Error.Message)}[/]\nPress any key to continue...\n"));
+                AnsiConsole.Console.Input.ReadKey(false);
+            }
         }
     }
 }
