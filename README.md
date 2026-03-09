@@ -2,6 +2,8 @@
 
 A terminal-based Pomodoro timer built in .NET.
 
+![pomodoro](https://github.com/user-attachments/assets/6c19869a-d225-4d63-9dcd-ca0ccc6fb159)
+
 ## Installation
 
 Download the latest binary for your platform from the [Releases](../../releases/latest) page.
