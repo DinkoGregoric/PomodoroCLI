@@ -15,10 +15,38 @@ Download the latest binary for your platform from the [Releases](../../releases/
 
 No .NET runtime required — binaries are self-contained.
 
-**macOS / Linux:** mark the binary as executable after downloading:
-```bash
-chmod +x pomodoro-osx-arm64
-```
+### Windows
+
+1. Download `pomodoro-win-x64.exe` and rename it to `pomodoro.exe`
+2. Move it to a folder of your choice, e.g. `C:\Tools`
+3. Add that folder to your PATH:
+   - Open **Start**, search for **"Edit the system environment variables"**
+   - Click **Environment Variables** → under User variables, select **Path** → **Edit**
+   - Click **New** and add `C:\Tools`
+   - Click OK and restart your terminal
+4. Run `pomodoro` from anywhere
+
+### macOS
+
+1. Download the binary for your chip and rename it to `pomodoro`
+2. Mark it as executable and move it to `/usr/local/bin`:
+   ```bash
+   chmod +x pomodoro-osx-arm64
+   mv pomodoro-osx-arm64 /usr/local/bin/pomodoro
+   ```
+3. On first run, macOS may block it as an unverified app. To allow it:
+   - Open **System Settings → Privacy & Security**, scroll down and click **Allow Anyway**
+   - Or run: `xattr -d com.apple.quarantine /usr/local/bin/pomodoro`
+4. Run `pomodoro` from anywhere
+
+### Linux
+
+1. Download `pomodoro-linux-x64`, rename it to `pomodoro`, mark it as executable and move it to `/usr/local/bin`:
+   ```bash
+   chmod +x pomodoro-linux-x64
+   mv pomodoro-linux-x64 /usr/local/bin/pomodoro
+   ```
+2. Run `pomodoro` from anywhere
 
 ## What it does
 
