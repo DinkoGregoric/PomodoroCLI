@@ -25,9 +25,4 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="CLI\" />
-    <Folder Include="Core\" />
-  </ItemGroup>
-
 </Project>
