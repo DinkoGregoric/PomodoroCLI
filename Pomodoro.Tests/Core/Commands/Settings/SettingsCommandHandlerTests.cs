@@ -45,7 +45,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatLoads(settings);
         var handler = new GetSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new GetSettingsCommand());
+        var result = await handler.HandleAsync(new GetSettingsCommand(), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Timing.WorkMinutes.Should().Be(30);
@@ -57,7 +57,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnLoad();
         var handler = new GetSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new GetSettingsCommand());
+        var result = await handler.HandleAsync(new GetSettingsCommand(), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(LoadError);
@@ -70,9 +70,9 @@ public class SettingsCommandHandlerTests
     {
         var provider = Substitute.For<ISettingsProvider>();
         var handler = new SaveTimingSettingsCommandHandler(provider);
-        var cmd = new SaveTimingSettingsCommand(WorkMinutes: 0, 5, 15, 4, 5); // WorkMinutes invalid
+        var cmd = new SaveTimingSettingsCommand(0, 5, 15, 4, 5); // WorkMinutes invalid
 
-        var result = await handler.HandleAsync(cmd);
+        var result = await handler.HandleAsync(cmd, TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Timing.WorkMinutes.OutOfRange");
@@ -85,7 +85,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnLoad();
         var handler = new SaveTimingSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveTimingSettingsCommand(25, 5, 15, 4, 5));
+        var result = await handler.HandleAsync(new SaveTimingSettingsCommand(25, 5, 15, 4, 5), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(LoadError);
@@ -98,7 +98,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnSave();
         var handler = new SaveTimingSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveTimingSettingsCommand(25, 5, 15, 4, 5));
+        var result = await handler.HandleAsync(new SaveTimingSettingsCommand(25, 5, 15, 4, 5), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(SaveError);
@@ -110,7 +110,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatLoads();
         var handler = new SaveTimingSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveTimingSettingsCommand(30, 8, 20, 3, 7));
+        var result = await handler.HandleAsync(new SaveTimingSettingsCommand(30, 8, 20, 3, 7), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Timing.WorkMinutes.Should().Be(30);
@@ -127,9 +127,9 @@ public class SettingsCommandHandlerTests
     {
         var provider = Substitute.For<ISettingsProvider>();
         var handler = new SaveProgressionSettingsCommandHandler(provider);
-        var cmd = new SaveProgressionSettingsCommand(true, TargetWorkMinutes: 0, 5, 10); // target invalid
+        var cmd = new SaveProgressionSettingsCommand(true, 0, 5, 10); // target work minutes invalid
 
-        var result = await handler.HandleAsync(cmd);
+        var result = await handler.HandleAsync(cmd, TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Progression.TargetWorkMinutes.OutOfRange");
@@ -142,7 +142,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnLoad();
         var handler = new SaveProgressionSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveProgressionSettingsCommand(true, 45, 5, 10));
+        var result = await handler.HandleAsync(new SaveProgressionSettingsCommand(true, 45, 5, 10), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(LoadError);
@@ -155,7 +155,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnSave();
         var handler = new SaveProgressionSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveProgressionSettingsCommand(true, 45, 5, 10));
+        var result = await handler.HandleAsync(new SaveProgressionSettingsCommand(true, 45, 5, 10), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(SaveError);
@@ -167,7 +167,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatLoads();
         var handler = new SaveProgressionSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveProgressionSettingsCommand(true, 60, 10, 5));
+        var result = await handler.HandleAsync(new SaveProgressionSettingsCommand(true, 60, 10, 5), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Progression.ProgressionEnabled.Should().BeTrue();
@@ -184,7 +184,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnLoad();
         var handler = new SaveNotificationSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveNotificationSettingsCommand(PlaySound: false));
+        var result = await handler.HandleAsync(new SaveNotificationSettingsCommand(PlaySound: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(LoadError);
@@ -196,7 +196,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnSave();
         var handler = new SaveNotificationSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveNotificationSettingsCommand(PlaySound: false));
+        var result = await handler.HandleAsync(new SaveNotificationSettingsCommand(PlaySound: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(SaveError);
@@ -208,7 +208,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatLoads();
         var handler = new SaveNotificationSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveNotificationSettingsCommand(PlaySound: false));
+        var result = await handler.HandleAsync(new SaveNotificationSettingsCommand(PlaySound: false), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Notifications.PlaySound.Should().BeFalse();
@@ -222,7 +222,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnLoad();
         var handler = new SaveDiagnosticsSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveDiagnosticsSettingsCommand(EnableEventLogging: false));
+        var result = await handler.HandleAsync(new SaveDiagnosticsSettingsCommand(EnableEventLogging: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(LoadError);
@@ -234,7 +234,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatFailsOnSave();
         var handler = new SaveDiagnosticsSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveDiagnosticsSettingsCommand(EnableEventLogging: false));
+        var result = await handler.HandleAsync(new SaveDiagnosticsSettingsCommand(EnableEventLogging: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(SaveError);
@@ -246,7 +246,7 @@ public class SettingsCommandHandlerTests
         var provider = ProviderThatLoads();
         var handler = new SaveDiagnosticsSettingsCommandHandler(provider);
 
-        var result = await handler.HandleAsync(new SaveDiagnosticsSettingsCommand(EnableEventLogging: false));
+        var result = await handler.HandleAsync(new SaveDiagnosticsSettingsCommand(EnableEventLogging: false), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Diagnostics.EnableEventLogging.Should().BeFalse();
