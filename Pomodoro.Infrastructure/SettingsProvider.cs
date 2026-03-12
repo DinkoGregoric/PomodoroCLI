@@ -1,4 +1,4 @@
-﻿using Pomodoro.Core.Common;
+using Pomodoro.Core.Common;
 using Pomodoro.Core.Domain;
 using Pomodoro.Core.Interfaces;
 using System.Text.Json;
@@ -7,20 +7,30 @@ namespace Pomodoro.Infrastructure
 {
     public class SettingsProvider : ISettingsProvider
     {
-        private static readonly string SettingsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pomodoro");
-
-        private static readonly string SettingsPath = Path.Combine(SettingsDir, "settings.json");
+        private readonly string _settingsDir;
+        private readonly string _settingsPath;
+        private readonly SemaphoreSlim _fileLock = new(1, 1);
 
         private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
 
-        private static readonly SemaphoreSlim FileLock = new(1, 1);
+        public SettingsProvider()
+        {
+            _settingsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pomodoro");
+            _settingsPath = Path.Combine(_settingsDir, "settings.json");
+        }
+
+        internal SettingsProvider(string configDirectory)
+        {
+            _settingsDir = configDirectory;
+            _settingsPath = Path.Combine(_settingsDir, "settings.json");
+        }
 
         public async Task<Result<PomodoroSettings>> LoadSettingsAsync()
         {
-            await FileLock.WaitAsync();
+            await _fileLock.WaitAsync();
             try
             {
-                if (!File.Exists(SettingsPath))
+                if (!File.Exists(_settingsPath))
                 {
                     var defaults = new PomodoroSettings();
                     var saveResult = await SaveCoreAsync(defaults);
@@ -30,8 +40,11 @@ namespace Pomodoro.Infrastructure
                         : Result<PomodoroSettings>.Success(defaults);
                 }
 
-                await using var fileStream = File.OpenRead(SettingsPath);
-                var settings = await JsonSerializer.DeserializeAsync<PomodoroSettings>(fileStream, SerializerOptions);
+                PomodoroSettings? settings;
+                using (var fileStream = File.OpenRead(_settingsPath))
+                {
+                    settings = await JsonSerializer.DeserializeAsync<PomodoroSettings>(fileStream, SerializerOptions);
+                }
 
                 if (settings is not null)
                 {
@@ -46,55 +59,55 @@ namespace Pomodoro.Infrastructure
             }
             catch (UnauthorizedAccessException ex)
             {
-                var errorMessage = $"Access to settings file is denied. Please check permissions for: {SettingsPath}.\n{ex.Message}\n";
+                var errorMessage = $"Access to settings file is denied. Please check permissions for: {_settingsPath}.\n{ex.Message}\n";
                 return Result<PomodoroSettings>.Failure(new Error("Settings.AccessDenied", errorMessage));
             }
             catch (IOException ex)
             {
-                var errorMessage = $"An I/O error occurred while accessing the settings file: {SettingsPath}.\n{ex.Message}\n";
+                var errorMessage = $"An I/O error occurred while accessing the settings file: {_settingsPath}.\n{ex.Message}\n";
                 return Result<PomodoroSettings>.Failure(new Error("Settings.LoadFailed", errorMessage));
             }
             finally
             {
-                FileLock.Release();
+                _fileLock.Release();
             }
         }
 
         public async Task<Result> SaveSettingsAsync(PomodoroSettings settings)
         {
-            await FileLock.WaitAsync();
+            await _fileLock.WaitAsync();
             try
             {
                 return await SaveCoreAsync(settings);
             }
             finally
             {
-                FileLock.Release();
+                _fileLock.Release();
             }
         }
 
-        private static async Task<Result> SaveCoreAsync(PomodoroSettings settings)
+        private async Task<Result> SaveCoreAsync(PomodoroSettings settings)
         {
             try
             {
-                Directory.CreateDirectory(SettingsDir);
-                await using var fileStream = File.Create(SettingsPath);
+                Directory.CreateDirectory(_settingsDir);
+                await using var fileStream = File.Create(_settingsPath);
                 await JsonSerializer.SerializeAsync(fileStream, settings, SerializerOptions);
                 return Result.Success();
             }
             catch (UnauthorizedAccessException ex)
             {
-                var errorMessage = $"Access to settings file is denied. Please check permissions for: {SettingsPath}.\n{ex.Message}\n";
+                var errorMessage = $"Access to settings file is denied. Please check permissions for: {_settingsPath}.\n{ex.Message}\n";
                 return Result.Failure(new Error("Settings.AccessDenied", errorMessage));
             }
             catch (IOException ex)
             {
-                var errorMessage = $"An I/O error occurred while saving the settings file: {SettingsPath}.\n{ex.Message}\n";
+                var errorMessage = $"An I/O error occurred while saving the settings file: {_settingsPath}.\n{ex.Message}\n";
                 return Result.Failure(new Error("Settings.SaveFailed", errorMessage));
             }
         }
 
-        private static async Task<Result<PomodoroSettings>> ResetToDefaultsAsync()
+        private async Task<Result<PomodoroSettings>> ResetToDefaultsAsync()
         {
             var defaults = new PomodoroSettings();
             var saveResult = await SaveCoreAsync(defaults);
