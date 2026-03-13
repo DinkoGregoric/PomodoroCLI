@@ -24,10 +24,12 @@ jobs:
 
       - name: Test
         run: |
+          mkdir -p ./coverage
           dotnet test Pomodoro.Tests/Pomodoro.Tests.csproj \
             --configuration Release \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./coverage
+            --coverage \
+            --coverage-output-format cobertura \
+            --coverage-output ./coverage/coverage.cobertura.xml
 
       - name: Generate coverage report
         uses: danielpalme/ReportGenerator-GitHub-Action@5
