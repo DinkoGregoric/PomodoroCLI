@@ -25,7 +25,7 @@ jobs:
       - name: Test
         run: |
           mkdir -p ./coverage
-          dotnet test Pomodoro.Tests/Pomodoro.Tests.csproj \
+          dotnet test --project Pomodoro.Tests/Pomodoro.Tests.csproj \
             --configuration Release \
             --coverage \
             --coverage-output-format cobertura \
