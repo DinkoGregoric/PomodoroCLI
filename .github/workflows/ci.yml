@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build
+        run: dotnet build --no-incremental -warnaserror
+
+      - name: Test
+        run: |
+          dotnet test Pomodoro.Tests/Pomodoro.Tests.csproj \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage
+
+      - name: Generate coverage report
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: ./coverage/**/coverage.cobertura.xml
+          targetdir: ./coverage/report
+          reporttypes: HtmlInline;MarkdownSummaryGithub
+
+      - name: Write coverage summary
+        run: cat ./coverage/report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage/report

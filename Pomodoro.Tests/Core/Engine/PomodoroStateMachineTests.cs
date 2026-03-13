@@ -186,7 +186,7 @@ public class PomodoroStateMachineTests
         machine.Resume();
 
         receivedArgs.Should().NotBeNull();
-        receivedArgs!.Phase.Should().Be(Phase.Work);
+        receivedArgs.Phase.Should().Be(Phase.Work);
         receivedArgs.MaxAllowedPauseDuration.Should().Be(3);
         machine.State.CurrentPhase.Should().Be(Phase.Idle);
         machine.State.PhaseStartTimeUtc.Should().BeNull();
