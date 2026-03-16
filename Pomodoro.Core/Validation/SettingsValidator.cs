@@ -10,8 +10,8 @@ namespace Pomodoro.Core.Validation
             if (cmd.WorkMinutes is < 1 or > 120)
                 return Result.Failure(new Error("Timing.WorkMinutes.OutOfRange", "Work duration must be between 1 and 120 minutes."));
 
-            if (cmd.ShortBreakMinutes is < 1 or > 60)
-                return Result.Failure(new Error("Timing.ShortBreakMinutes.OutOfRange", "Short break must be between 1 and 60 minutes."));
+            if (cmd.ShortBreakMinutes is < 1 or > 30)
+                return Result.Failure(new Error("Timing.ShortBreakMinutes.OutOfRange", "Short break must be between 1 and 30 minutes."));
 
             if (cmd.LongBreakMinutes is < 1 or > 60)
                 return Result.Failure(new Error("Timing.LongBreakMinutes.OutOfRange", "Long break must be between 1 and 60 minutes."));

@@ -2,7 +2,7 @@ using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.Core.Commands
 {
-    public sealed class InMemoryCommandDispatcher : ICommandDispatcher
+    internal sealed class InMemoryCommandDispatcher : ICommandDispatcher
     {
         private readonly Dictionary<Type, Func<object, CancellationToken, Task<object>>> _handlers = [];
 

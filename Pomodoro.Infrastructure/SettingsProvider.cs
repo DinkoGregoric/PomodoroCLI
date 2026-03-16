@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Pomodoro.Infrastructure
 {
-    public class SettingsProvider : ISettingsProvider
+    internal sealed class SettingsProvider : ISettingsProvider, IDisposable
     {
         private readonly string _settingsDir;
         private readonly string _settingsPath;
@@ -115,6 +115,11 @@ namespace Pomodoro.Infrastructure
             return saveResult.IsFailure
                 ? Result<PomodoroSettings>.Failure(saveResult.Error)
                 : Result<PomodoroSettings>.Success(defaults);
+        }
+
+        public void Dispose()
+        {
+            _fileLock.Dispose();
         }
     }
 }

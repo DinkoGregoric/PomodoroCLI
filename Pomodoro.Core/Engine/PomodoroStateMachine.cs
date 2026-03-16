@@ -5,15 +5,15 @@ using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.Core.Engine
 {
-    public sealed class PomodoroStateMachine
+    internal sealed class PomodoroStateMachine
     {
         private readonly PomodoroSettings _settings;
         private readonly TimeProvider _timeProvider;
 
-        public event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
-        public event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
+        internal event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
+        internal event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
 
-        public PomodoroState State { get; }
+        internal PomodoroState State { get; }
 
         private PomodoroStateMachine(TimeProvider timeProvider, PomodoroSettings settings)
         {
@@ -22,7 +22,7 @@ namespace Pomodoro.Core.Engine
             _settings = settings;
         }
 
-        public static async Task<Result<PomodoroStateMachine>> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
+        internal static async Task<Result<PomodoroStateMachine>> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
         {
             var settings = await settingsProvider.LoadSettingsAsync();
             if (settings.IsFailure)

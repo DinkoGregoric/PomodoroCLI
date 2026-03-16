@@ -1,15 +1,15 @@
 ﻿using Pomodoro.Core.Commands.Settings;
 using Pomodoro.Core.Common;
 using Pomodoro.Core.Domain;
-using Pomodoro.Core.Interfaces;
+using Pomodoro.Core.Engine;
 
 namespace Pomodoro.CLI.UseCases.Settings
 {
-    internal class GetSettingsUseCase(ICommandDispatcher dispatcher)
+    internal class GetSettingsUseCase(SettingsEngine engine)
     {
         internal Task<Result<PomodoroSettings>> ExecuteAsync()
         {
-            return dispatcher.DispatchAsync(new GetSettingsCommand());
+            return engine.Dispatcher.DispatchAsync(new GetSettingsCommand());
         }
     }
 }

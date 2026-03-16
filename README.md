@@ -78,7 +78,7 @@ Three projects:
 
 ```
 Pomodoro.Core           Domain logic — state machine, settings models, CQRS commands
-Pomodoro.Infrastructure Settings persistence (JSON file, thread-safe, self-healing)
+Pomodoro.Infrastructure Settings persistence (JSON file, thread-safe, self-healing), engine factories, DI setup (AddPomodoro())
 Pomodoro.CLI            Terminal UI built with Spectre.Console
 ```
 
@@ -86,6 +86,7 @@ Pomodoro.CLI            Terminal UI built with Spectre.Console
 
 - .NET 10
 - [Spectre.Console](https://spectreconsole.net/) for the terminal UI
+- [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) for optional DI integration
 
 ## License
 

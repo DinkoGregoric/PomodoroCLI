@@ -3,7 +3,6 @@ using Pomodoro.Core.Commands;
 using Pomodoro.Core.Domain;
 using Pomodoro.Core.Engine;
 using Pomodoro.Core.Events;
-using Pomodoro.Core.Interfaces;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
@@ -11,8 +10,7 @@ namespace Pomodoro.CLI.Views
 {
     internal class PomodoroView(
         TimeProvider timeProvider,
-        PomodoroStateMachine stateMachine,
-        ICommandDispatcher dispatcher,
+        PomodoroEngine engine,
         StartUseCase start,
         PauseUseCase pause,
         ResumeUseCase resume,
@@ -20,7 +18,7 @@ namespace Pomodoro.CLI.Views
         SkipUseCase skip)
     {
         private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-        private readonly PomodoroState state = stateMachine.State;
+        private readonly PomodoroState state = engine.State;
         private int _spinnerIndex = 0;
         private string? _sessionExpiredMessage = null;
         private string? _phaseCompletedMessage = null;
@@ -40,8 +38,8 @@ namespace Pomodoro.CLI.Views
             {
                 await start.ExecuteAsync();
 
-                stateMachine.SessionExpiredDueToPauseTimeout += OnSessionExpired;
-                stateMachine.PhaseCompleted += OnPhaseCompleted;
+                engine.SessionExpiredDueToPauseTimeout += OnSessionExpired;
+                engine.PhaseCompleted += OnPhaseCompleted;
                 try
                 {
                     await AnsiConsole.Live(BuildDisplay())
@@ -79,7 +77,7 @@ namespace Pomodoro.CLI.Views
                                     }
                                 }
 
-                                await dispatcher.DispatchAsync(new AdvanceTimeCommand());
+                                await engine.Dispatcher.DispatchAsync(new AdvanceTimeCommand());
                                 ctx.UpdateTarget(BuildDisplay());
 
                                 await Task.Delay(250);
@@ -88,8 +86,8 @@ namespace Pomodoro.CLI.Views
                 }
                 finally
                 {
-                    stateMachine.SessionExpiredDueToPauseTimeout -= OnSessionExpired;
-                    stateMachine.PhaseCompleted -= OnPhaseCompleted;
+                    engine.SessionExpiredDueToPauseTimeout -= OnSessionExpired;
+                    engine.PhaseCompleted -= OnPhaseCompleted;
                     _beepCts?.Cancel();
                 }
             }
