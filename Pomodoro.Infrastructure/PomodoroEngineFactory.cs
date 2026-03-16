@@ -5,7 +5,7 @@ using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.Infrastructure
 {
-    public sealed class PomodoroEngineFactory(ISettingsProvider settingsProvider, TimeProvider timeProvider)
+    internal sealed class PomodoroEngineFactory(ISettingsProvider settingsProvider, TimeProvider timeProvider)
         : IPomodoroEngineFactory
     {
         public async Task<Result<PomodoroEngine>> CreateAsync()

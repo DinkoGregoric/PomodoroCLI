@@ -1,11 +1,11 @@
 ﻿using Pomodoro.Core.Commands.Settings;
 using Pomodoro.Core.Common;
 using Pomodoro.Core.Domain;
-using Pomodoro.Core.Interfaces;
+using Pomodoro.Core.Engine;
 
 namespace Pomodoro.CLI.UseCases.Settings
 {
-    internal class SaveSettingsUseCase(ICommandDispatcher dispatcher)
+    internal class SaveSettingsUseCase(SettingsEngine engine)
     {
         internal Task<Result<PomodoroSettings>> ExecuteForTimingSettingsAsync(
             int workMinutes,
@@ -14,7 +14,7 @@ namespace Pomodoro.CLI.UseCases.Settings
             int longBreakInterval,
             int maxPhasePauseMinutes)
         {
-            return dispatcher.DispatchAsync(new SaveTimingSettingsCommand(
+            return engine.Dispatcher.DispatchAsync(new SaveTimingSettingsCommand(
                 workMinutes,
                 shortBreakMinutes,
                 longBreakMinutes,
@@ -28,7 +28,7 @@ namespace Pomodoro.CLI.UseCases.Settings
             int stepMinutes,
             int requiredCompletionsToApplyStep)
         {
-            return dispatcher.DispatchAsync(new SaveProgressionSettingsCommand(
+            return engine.Dispatcher.DispatchAsync(new SaveProgressionSettingsCommand(
                 progressionEnabled,
                 targetWorkMinutes,
                 stepMinutes,
@@ -37,12 +37,12 @@ namespace Pomodoro.CLI.UseCases.Settings
 
         internal Task<Result<PomodoroSettings>> ExecuteForNotificationSettingsAsync(bool playSound)
         {
-            return dispatcher.DispatchAsync(new SaveNotificationSettingsCommand(playSound));
+            return engine.Dispatcher.DispatchAsync(new SaveNotificationSettingsCommand(playSound));
         }
 
         internal Task<Result<PomodoroSettings>> ExecuteForDiagnosticsSettingsAsync(bool enableEventLogging)
         {
-            return dispatcher.DispatchAsync(new SaveDiagnosticsSettingsCommand(enableEventLogging));
+            return engine.Dispatcher.DispatchAsync(new SaveDiagnosticsSettingsCommand(enableEventLogging));
         }
     }
 }

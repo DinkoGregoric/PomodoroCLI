@@ -9,7 +9,7 @@ public class SettingsProviderTests
     public async Task LoadSettingsAsync_FileNotFound_ReturnsDefaultSettings()
     {
         using var dir = new TempDirectory();
-        var provider = new SettingsProvider(dir.Path);
+        using var provider = new SettingsProvider(dir.Path);
 
         var result = await provider.LoadSettingsAsync();
 
@@ -24,7 +24,7 @@ public class SettingsProviderTests
     public async Task LoadSettingsAsync_FileNotFound_CreatesFileOnDisk()
     {
         using var dir = new TempDirectory();
-        var provider = new SettingsProvider(dir.Path);
+        using var provider = new SettingsProvider(dir.Path);
 
         await provider.LoadSettingsAsync();
 
@@ -46,7 +46,7 @@ public class SettingsProviderTests
             """;
         await File.WriteAllTextAsync(Path.Combine(dir.Path, "settings.json"), json, TestContext.Current.CancellationToken);
 
-        var provider = new SettingsProvider(dir.Path);
+        using var provider = new SettingsProvider(dir.Path);
         var result = await provider.LoadSettingsAsync();
 
         result.IsSuccess.Should().BeTrue();
@@ -59,7 +59,7 @@ public class SettingsProviderTests
         using var dir = new TempDirectory();
         await File.WriteAllTextAsync(Path.Combine(dir.Path, "settings.json"), "{invalid json", TestContext.Current.CancellationToken);
 
-        var provider = new SettingsProvider(dir.Path);
+        using var provider = new SettingsProvider(dir.Path);
         var result = await provider.LoadSettingsAsync();
 
         result.IsSuccess.Should().BeTrue();
@@ -72,7 +72,7 @@ public class SettingsProviderTests
         using var dir = new TempDirectory();
         await File.WriteAllTextAsync(Path.Combine(dir.Path, "settings.json"), "null", TestContext.Current.CancellationToken);
 
-        var provider = new SettingsProvider(dir.Path);
+        using var provider = new SettingsProvider(dir.Path);
         var result = await provider.LoadSettingsAsync();
 
         result.IsSuccess.Should().BeTrue();
@@ -83,7 +83,7 @@ public class SettingsProviderTests
     public async Task SaveSettingsAsync_ValidSettings_RoundTripsCorrectly()
     {
         using var dir = new TempDirectory();
-        var provider = new SettingsProvider(dir.Path);
+        using var provider = new SettingsProvider(dir.Path);
 
         var loadResult = await provider.LoadSettingsAsync();
         loadResult.Value.Timing.WorkMinutes = 45;
@@ -100,7 +100,7 @@ public class SettingsProviderTests
     {
         using var dir = new TempDirectory();
         var subDir = Path.Combine(dir.Path, "nested", "config");
-        var provider = new SettingsProvider(subDir);
+        using var provider = new SettingsProvider(subDir);
 
         var settings = new Pomodoro.Core.Domain.PomodoroSettings();
         var result = await provider.SaveSettingsAsync(settings);

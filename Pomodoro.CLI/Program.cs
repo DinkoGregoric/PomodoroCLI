@@ -9,17 +9,14 @@ using Spectre.Console;
 
 var services = new ServiceCollection();
 services.AddPomodoro();
-var provider = services.BuildServiceProvider();
+await using var provider = services.BuildServiceProvider();
 
-var factory = provider.GetRequiredService<IPomodoroEngineFactory>();
-var settingsDispatcher = provider.GetRequiredService<ICommandDispatcher>();
+var engineFactory = provider.GetRequiredService<IPomodoroEngineFactory>();
+var settingsFactory = provider.GetRequiredService<ISettingsEngineFactory>();
 var timeProvider = provider.GetRequiredService<TimeProvider>();
 
-var getSettingsUseCase = new GetSettingsUseCase(settingsDispatcher);
-var saveSettingsUseCase = new SaveSettingsUseCase(settingsDispatcher);
-
 var menuView = new StartMenuView();
-var settingsView = new SettingsView(getSettingsUseCase, saveSettingsUseCase);
+var settingsView = CreateSettingsView();
 var pomodoroView = await CreatePomodoroView();
 
 while (true)
@@ -48,9 +45,23 @@ while (true)
 AnsiConsole.Clear();
 AnsiConsole.Write(new Markup("Thank you for using [bold red]Pomodoro CLI[/]🍅! Goodbye! 👋\n", Styles.Default));
 
+SettingsView CreateSettingsView()
+{
+    var settingsEngineResult = settingsFactory.Create();
+    if (settingsEngineResult.IsFailure)
+    {
+        AnsiConsole.Write(new Markup($"[red]Error loading settings engine:[/] {settingsEngineResult.Error.Message}\n"));
+        Environment.Exit(1);
+    }
+    var settingsEngine = settingsEngineResult.Value;
+    return new SettingsView(
+        new GetSettingsUseCase(settingsEngine),
+        new SaveSettingsUseCase(settingsEngine));
+}
+
 async Task<PomodoroView> CreatePomodoroView()
 {
-    var result = await factory.CreateAsync();
+    var result = await engineFactory.CreateAsync();
     if (result.IsFailure)
     {
         AnsiConsole.Write(new Markup($"[red]Error loading settings:[/] {result.Error.Message}\n"));

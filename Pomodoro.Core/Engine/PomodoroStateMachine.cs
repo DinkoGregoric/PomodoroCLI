@@ -13,7 +13,7 @@ namespace Pomodoro.Core.Engine
         internal event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
         internal event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
 
-        public PomodoroState State { get; }
+        internal PomodoroState State { get; }
 
         private PomodoroStateMachine(TimeProvider timeProvider, PomodoroSettings settings)
         {
@@ -22,7 +22,7 @@ namespace Pomodoro.Core.Engine
             _settings = settings;
         }
 
-        public static async Task<Result<PomodoroStateMachine>> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
+        internal static async Task<Result<PomodoroStateMachine>> CreateAsync(ISettingsProvider settingsProvider, TimeProvider timeProvider)
         {
             var settings = await settingsProvider.LoadSettingsAsync();
             if (settings.IsFailure)
