@@ -249,6 +249,6 @@ public class SettingsCommandHandlerTests
         var result = await handler.HandleAsync(new SaveDiagnosticsSettingsCommand(EnableEventLogging: false), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Diagnostics.EnableEventLogging.Should().BeFalse();
+        result.Value.Diagnostics.EnableLogging.Should().BeFalse();
     }
 }

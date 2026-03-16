@@ -110,7 +110,7 @@ namespace Pomodoro.Core.Commands.Settings
             var settings = loadResult.Value;
             settings.Diagnostics = new DiagnosticsSettings
             {
-                EnableEventLogging = command.EnableEventLogging
+                EnableLogging = command.EnableEventLogging
             };
 
             var saveResult = await settingsProvider.SaveSettingsAsync(settings);

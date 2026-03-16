@@ -170,7 +170,7 @@ namespace Pomodoro.CLI.Views
         {
             var enableEventLogging = AnsiConsole.Confirm(
                 $"[{Styles.Default.Foreground}]Enable event logging?[/]",
-                settings.Diagnostics.EnableEventLogging);
+                settings.Diagnostics.EnableLogging);
 
             var result = await _saveSettings.ExecuteForDiagnosticsSettingsAsync(enableEventLogging);
 
