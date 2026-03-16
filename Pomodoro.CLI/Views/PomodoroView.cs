@@ -3,6 +3,7 @@ using Pomodoro.Core.Commands;
 using Pomodoro.Core.Domain;
 using Pomodoro.Core.Engine;
 using Pomodoro.Core.Events;
+using Pomodoro.Core.Interfaces;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
@@ -15,7 +16,8 @@ namespace Pomodoro.CLI.Views
         PauseUseCase pause,
         ResumeUseCase resume,
         ResetUseCase reset,
-        SkipUseCase skip)
+        SkipUseCase skip,
+        IAppLogger logger)
     {
         private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         private readonly PomodoroState state = engine.State;
@@ -58,22 +60,40 @@ namespace Pomodoro.CLI.Views
                                             _sessionExpiredMessage = null;
                                             _phaseCompletedMessage = null;
                                             if (state.CurrentPhase == Phase.Idle || !state.PhaseStartTimeUtc.HasValue)
-                                                await start.ExecuteAsync();
+                                            {
+                                                var r = await start.ExecuteAsync();
+                                                if (r.IsFailure) logger.Warning($"Start failed: {r.Error.Message}");
+                                            }
                                             else if (state.IsRunning)
-                                                await pause.ExecuteAsync();
+                                            {
+                                                var r = await pause.ExecuteAsync();
+                                                if (r.IsFailure) logger.Warning($"Pause failed: {r.Error.Message}");
+                                            }
                                             else
-                                                await resume.ExecuteAsync();
+                                            {
+                                                var r = await resume.ExecuteAsync();
+                                                if (r.IsFailure) logger.Warning($"Resume failed: {r.Error.Message}");
+                                            }
                                             break;
                                         case ConsoleKey.K:
-                                            await skip.ExecuteAsync();
+                                        {
+                                            var r = await skip.ExecuteAsync();
+                                            if (r.IsFailure) logger.Warning($"Skip failed: {r.Error.Message}");
                                             break;
+                                        }
                                         case ConsoleKey.T:
-                                            await reset.ExecuteAsync();
+                                        {
+                                            var r = await reset.ExecuteAsync();
+                                            if (r.IsFailure) logger.Warning($"Reset failed: {r.Error.Message}");
                                             break;
+                                        }
                                         case ConsoleKey.Q:
-                                            await reset.ExecuteAsync();
+                                        {
+                                            var r = await reset.ExecuteAsync();
+                                            if (r.IsFailure) logger.Warning($"Reset on quit failed: {r.Error.Message}");
                                             quit = true;
                                             continue;
+                                        }
                                     }
                                 }
 
@@ -95,11 +115,13 @@ namespace Pomodoro.CLI.Views
 
         private void OnSessionExpired(object? sender, SessionExpiredEventArgs e)
         {
+            logger.Warning($"Session expired: {e.Phase} phase paused longer than {e.MaxAllowedPauseDuration} minutes");
             _sessionExpiredMessage = $"[red]Session reset: {e.Phase} phase paused longer than the allowed {e.MaxAllowedPauseDuration} minutes.[/]";
         }
 
         private void OnPhaseCompleted(object? sender, PhaseCompletedEventArgs e)
         {
+            logger.Info($"Phase completed: {e.CompletedPhase} -> {e.NextPhase}");
             _phaseCompletedMessage = $"[green]{e.CompletedPhase} phase ended.[/] Press [[S]] to start {e.NextPhase}.";
 
             if (!e.PlaySound)

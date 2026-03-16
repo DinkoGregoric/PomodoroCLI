@@ -6,7 +6,6 @@
         public ProgressionSettings Progression { get; set; } = new ProgressionSettings();
         public NotificationSettings Notifications { get; set; } = new NotificationSettings();
         public DiagnosticsSettings Diagnostics { get; set; } = new DiagnosticsSettings();
-        public Information Info { get; set; } = new Information();
     }
 
     public sealed class TimingSettings
@@ -24,8 +23,6 @@
         public int TargetWorkMinutes { get; set; } = 45;
         public int StepMinutes { get; set; } = 5;
         public int RequiredCompletionsToApplyStep { get; set; } = 10;
-
-        // ToDo: Possible regressions, max allowed fails etc...
     }
 
     public sealed class NotificationSettings
@@ -33,16 +30,9 @@
         public bool PlaySound { get; set; } = true;
     }
 
-    public sealed class Information
-    {
-        public int Version { get; set; } = 1;
-
-        public DateTimeOffset LastModifiedUtc { get; set; }
-    }
-
     public sealed class DiagnosticsSettings
     {
-        public bool EnableEventLogging { get; set; } = true;
+        public bool EnableEventLogging { get; set; } = false;
     }
 
 }
