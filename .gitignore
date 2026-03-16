@@ -85,8 +85,7 @@ coverage.*.xml
 local.settings.json
 
 # ==============================
-# Copilot / AI instructions you don't want committed
-# (adjust to match your repo)
+# Copilot / AI instructions
 # ==============================
 .github/copilot-instructions.md
 .github/copilot-instructions.txt

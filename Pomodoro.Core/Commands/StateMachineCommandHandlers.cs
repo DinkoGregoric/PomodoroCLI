@@ -1,10 +1,10 @@
-﻿using Pomodoro.Core.Common;
+using Pomodoro.Core.Common;
 using Pomodoro.Core.Engine;
 using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.Core.Commands
 {
-    public sealed class StartCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<StartCommand, Result>
+    internal sealed class StartCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<StartCommand, Result>
     {
         public Task<Result> HandleAsync(StartCommand command, CancellationToken cancellationToken = default)
         {
@@ -13,7 +13,7 @@ namespace Pomodoro.Core.Commands
         }
     }
 
-    public sealed class PauseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<PauseCommand, Result>
+    internal sealed class PauseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<PauseCommand, Result>
     {
         public Task<Result> HandleAsync(PauseCommand command, CancellationToken cancellationToken = default)
         {
@@ -22,7 +22,7 @@ namespace Pomodoro.Core.Commands
         }
     }
 
-    public sealed class ResumeCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<ResumeCommand, Result>
+    internal sealed class ResumeCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<ResumeCommand, Result>
     {
         public Task<Result> HandleAsync(ResumeCommand command, CancellationToken cancellationToken = default)
         {
@@ -31,7 +31,7 @@ namespace Pomodoro.Core.Commands
         }
     }
 
-    public sealed class AdvanceTimeCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<AdvanceTimeCommand, Result>
+    internal sealed class AdvanceTimeCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<AdvanceTimeCommand, Result>
     {
         public Task<Result> HandleAsync(AdvanceTimeCommand command, CancellationToken cancellationToken = default)
         {
@@ -40,7 +40,7 @@ namespace Pomodoro.Core.Commands
         }
     }
 
-    public sealed class ResetPhaseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<ResetPhaseCommand, Result>
+    internal sealed class ResetPhaseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<ResetPhaseCommand, Result>
     {
         public Task<Result> HandleAsync(ResetPhaseCommand command, CancellationToken cancellationToken = default)
         {
@@ -49,7 +49,7 @@ namespace Pomodoro.Core.Commands
         }
     }
 
-    public sealed class SkipPhaseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<SkipPhaseCommand, Result>
+    internal sealed class SkipPhaseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<SkipPhaseCommand, Result>
     {
         public Task<Result> HandleAsync(SkipPhaseCommand command, CancellationToken cancellationToken = default)
         {

@@ -5,7 +5,7 @@ using Pomodoro.Core.Validation;
 
 namespace Pomodoro.Core.Commands.Settings
 {
-    public sealed class GetSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<GetSettingsCommand, Result<PomodoroSettings>>
+    internal sealed class GetSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<GetSettingsCommand, Result<PomodoroSettings>>
     {
         public Task<Result<PomodoroSettings>> HandleAsync(GetSettingsCommand command, CancellationToken cancellationToken = default)
         {
@@ -13,7 +13,7 @@ namespace Pomodoro.Core.Commands.Settings
         }
     }
 
-    public sealed class SaveTimingSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveTimingSettingsCommand, Result<PomodoroSettings>>
+    internal sealed class SaveTimingSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveTimingSettingsCommand, Result<PomodoroSettings>>
     {
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveTimingSettingsCommand command, CancellationToken cancellationToken = default)
         {
@@ -44,7 +44,7 @@ namespace Pomodoro.Core.Commands.Settings
         }
     }
 
-    public sealed class SaveProgressionSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveProgressionSettingsCommand, Result<PomodoroSettings>>
+    internal sealed class SaveProgressionSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveProgressionSettingsCommand, Result<PomodoroSettings>>
     {
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveProgressionSettingsCommand command, CancellationToken cancellationToken = default)
         {
@@ -74,7 +74,7 @@ namespace Pomodoro.Core.Commands.Settings
         }
     }
 
-    public sealed class SaveNotificationSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveNotificationSettingsCommand, Result<PomodoroSettings>>
+    internal sealed class SaveNotificationSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveNotificationSettingsCommand, Result<PomodoroSettings>>
     {
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveNotificationSettingsCommand command, CancellationToken cancellationToken = default)
         {
@@ -97,7 +97,7 @@ namespace Pomodoro.Core.Commands.Settings
         }
     }
 
-    public sealed class SaveDiagnosticsSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveDiagnosticsSettingsCommand, Result<PomodoroSettings>>
+    internal sealed class SaveDiagnosticsSettingsCommandHandler(ISettingsProvider settingsProvider) : ICommandHandler<SaveDiagnosticsSettingsCommand, Result<PomodoroSettings>>
     {
         public async Task<Result<PomodoroSettings>> HandleAsync(SaveDiagnosticsSettingsCommand command, CancellationToken cancellationToken = default)
         {

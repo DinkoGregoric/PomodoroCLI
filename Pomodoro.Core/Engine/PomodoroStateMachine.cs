@@ -5,13 +5,13 @@ using Pomodoro.Core.Interfaces;
 
 namespace Pomodoro.Core.Engine
 {
-    public sealed class PomodoroStateMachine
+    internal sealed class PomodoroStateMachine
     {
         private readonly PomodoroSettings _settings;
         private readonly TimeProvider _timeProvider;
 
-        public event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
-        public event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
+        internal event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
+        internal event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
 
         public PomodoroState State { get; }
 
