@@ -4,36 +4,21 @@ namespace Pomodoro.Infrastructure.Logging
 {
     internal sealed class FileAppLogger : IAppLogger
     {
-        private readonly StreamWriter? _writer;
+        private readonly string _directory;
         private readonly object _lock = new();
-        private bool _enableEventLogging;
+        private StreamWriter? _writer;
+        private bool _writerFailed;
+        private bool _enableFileLogging;
         private bool _disposed;
 
         public FileAppLogger()
         {
-            try
-            {
-                var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pomodoro");
-                Directory.CreateDirectory(dir);
-                _writer = OpenWriter(dir);
-            }
-            catch
-            {
-                _writer = null;
-            }
+            _directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pomodoro");
         }
 
         internal FileAppLogger(string directory)
         {
-            try
-            {
-                Directory.CreateDirectory(directory);
-                _writer = OpenWriter(directory);
-            }
-            catch
-            {
-                _writer = null;
-            }
+            _directory = directory;
         }
 
         private static StreamWriter OpenWriter(string directory) =>
@@ -41,7 +26,7 @@ namespace Pomodoro.Infrastructure.Logging
 
         public void EnableFileLogging(bool enabled)
         {
-            _enableEventLogging = enabled;
+            _enableFileLogging = enabled;
         }
 
         public void Info(string message) => Write("INFO", message);
@@ -50,14 +35,33 @@ namespace Pomodoro.Infrastructure.Logging
 
         private void Write(string level, string message, Exception? ex = null)
         {
-            if (!_enableEventLogging || _writer is null || _disposed)
+            if (!_enableFileLogging || _disposed)
             {
                 return;
             }
 
             lock (_lock)
             {
-                if (_disposed)
+                if (!_enableFileLogging || _disposed)
+                {
+                    return;
+                }
+
+                if (_writer is null && !_writerFailed)
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(_directory);
+                        _writer = OpenWriter(_directory);
+                    }
+                    catch
+                    {
+                        _writerFailed = true;
+                        return;
+                    }
+                }
+
+                if (_writer is null)
                 {
                     return;
                 }

@@ -32,7 +32,7 @@
 
     public sealed class DiagnosticsSettings
     {
-        public bool EnableEventLogging { get; set; } = false;
+        public bool EnableLogging { get; set; } = false;
     }
 
 }

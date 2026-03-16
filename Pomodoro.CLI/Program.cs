@@ -105,6 +105,6 @@ async Task UpdateLoggerVerbosity()
     var settings = await new GetSettingsUseCase(engineResult.Value).ExecuteAsync();
     if (settings.IsSuccess)
     {
-        logger.EnableFileLogging(settings.Value.Diagnostics.EnableEventLogging);
+        logger.EnableFileLogging(settings.Value.Diagnostics.EnableLogging);
     }
 }
