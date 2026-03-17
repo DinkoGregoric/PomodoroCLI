@@ -58,7 +58,7 @@ The settings menu lets you tweak:
 
 - **Timing** — work duration, short/long break lengths, how often you get a long break, and a max pause time (after which the session resets so you can't leave it paused indefinitely)
 - **Notifications** — sound alert when a phase ends
-- **Diagnostics** — event logging, mostly for debugging
+- **Diagnostics** — whether to log events or not (`%APPDATA%/Pomodoro/pomodoro.log` on Windows, `~/.config/Pomodoro/pomodoro.log` on macOS/Linux)
 - **Progression** - not implemented yet, but eventually the idea is to optionally ramp up work durations over time, so you gradually build toward a longer focus target rather than jumping straight to it
 
 Settings persist between sessions (`%APPDATA%/Pomodoro/settings.json` on Windows, `~/.config/Pomodoro/settings.json` on macOS/Linux).
@@ -78,7 +78,7 @@ Three projects:
 
 ```
 Pomodoro.Core           Domain logic — state machine, settings models, CQRS commands
-Pomodoro.Infrastructure Settings persistence (JSON file, thread-safe, self-healing), engine factories, DI setup (AddPomodoro())
+Pomodoro.Infrastructure Settings persistence (JSON file, thread-safe, self-healing), engine factories, DI setup (AddPomodoro()), file logging
 Pomodoro.CLI            Terminal UI built with Spectre.Console
 ```
 
