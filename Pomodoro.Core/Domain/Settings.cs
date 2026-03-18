@@ -36,4 +36,11 @@
         public bool EnableLogging { get; set; } = false;
     }
 
+    public sealed record PomodoroProgressionDetails(
+        bool ProgressionEnabled,
+        int WorkMinutes,
+        int TargetWorkMinutes,
+        int SessionsCompletedTowardStep,
+        int RequiredCompletionsToApplyStep
+    );
 }

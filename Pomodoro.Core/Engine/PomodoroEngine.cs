@@ -9,7 +9,20 @@ namespace Pomodoro.Core.Engine
         private readonly PomodoroStateMachine _machine;
 
         public PomodoroState State => _machine.State;
-        public PomodoroSettings Settings => _machine.Settings;
+        public PomodoroProgressionDetails ProgressionDetails
+        {
+            get
+            {
+                var s = _machine.Settings;
+                return new PomodoroProgressionDetails(
+                    s.Progression.ProgressionEnabled,
+                    s.Timing.WorkMinutes,
+                    s.Progression.TargetWorkMinutes,
+                    s.Progression.SessionsCompletedTowardStep,
+                    s.Progression.RequiredCompletionsToApplyStep
+                );
+            }
+        }
         public ICommandDispatcher Dispatcher { get; }
 
         public event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;

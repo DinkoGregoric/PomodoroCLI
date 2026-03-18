@@ -21,8 +21,7 @@ namespace Pomodoro.CLI.Views
     {
         private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         private readonly PomodoroState state = engine.State;
-        private readonly ProgressionSettings _progression = engine.Settings.Progression;
-        private readonly TimingSettings _timing = engine.Settings.Timing;
+        private readonly PomodoroProgressionDetails _progressionDetails = engine.ProgressionDetails;
         private int _spinnerIndex = 0;
         private string? _sessionExpiredMessage = null;
         private string? _phaseCompletedMessage = null;
@@ -178,11 +177,11 @@ namespace Pomodoro.CLI.Views
                 new Markup($"Remaining: [bold]{remaining:mm\\:ss}[/]"),
             };
 
-            if (_progression.ProgressionEnabled)
+            if (_progressionDetails.ProgressionEnabled)
             {
-                rows.Add(_timing.WorkMinutes < _progression.TargetWorkMinutes
-                    ? new Markup($"Progression: [bold]{_timing.WorkMinutes}→{_progression.TargetWorkMinutes}[/] min | {_progression.SessionsCompletedTowardStep}/{_progression.RequiredCompletionsToApplyStep} sessions")
-                    : new Markup($"Progression: [bold]{_timing.WorkMinutes}[/] min (target reached)"));
+                rows.Add(_progressionDetails.WorkMinutes < _progressionDetails.TargetWorkMinutes
+                    ? new Markup($"Progression: [bold]{_progressionDetails.WorkMinutes}→{_progressionDetails.TargetWorkMinutes}[/] min | {_progressionDetails.SessionsCompletedTowardStep}/{_progressionDetails.RequiredCompletionsToApplyStep} sessions")
+                    : new Markup($"Progression: [bold]{_progressionDetails.WorkMinutes}[/] min (target reached)"));
             }
 
             rows.Add(new Rule());
