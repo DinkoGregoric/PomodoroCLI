@@ -129,7 +129,7 @@ namespace Pomodoro.CLI.Views
                     new TextPrompt<int>($"[{Styles.Default.Foreground}]Step increase (minutes):[/]")
                         .DefaultValue(settings.Progression.StepMinutes)
                         .ValidationErrorMessage($"[red]Please enter a valid number[/]")
-                        .Validate(m => m > 0 && m <= 15 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 15[/]")));
+                        .Validate(m => m > 0 && m <= 30 ? ValidationResult.Success() : ValidationResult.Error("[red]Must be between 1 and 30[/]")));
 
                 requiredCompletionsToApplyStep = AnsiConsole.Prompt(
                     new TextPrompt<int>($"[{Styles.Default.Foreground}]Required completions before increasing duration:[/]")

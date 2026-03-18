@@ -19,6 +19,7 @@ public class PomodoroStateMachineTests
         settings ??= new PomodoroSettings();
         var provider = Substitute.For<ISettingsProvider>();
         provider.LoadSettingsAsync().Returns(Result<PomodoroSettings>.Success(settings));
+        provider.SaveSettingsAsync(Arg.Any<PomodoroSettings>()).Returns(Task.FromResult(Result.Success()));
         return (await PomodoroStateMachine.CreateAsync(provider, timeProvider)).Value;
     }
 
@@ -147,7 +148,7 @@ public class PomodoroStateMachineTests
         var machine = await CreateMachineAsync(tp);
         machine.Start();
 
-        machine.Resume();
+        await machine.Resume();
 
         machine.State.IsRunning.Should().BeTrue();
         machine.State.PauseAccumulated.Should().Be(TimeSpan.Zero);
@@ -162,7 +163,7 @@ public class PomodoroStateMachineTests
         machine.Pause();
         tp.Advance(TimeSpan.FromMinutes(2));
 
-        machine.Resume();
+        await machine.Resume();
 
         machine.State.PausedAtUtc.Should().BeNull();
         machine.State.PauseAccumulated.Should().Be(TimeSpan.FromMinutes(2));
@@ -183,7 +184,7 @@ public class PomodoroStateMachineTests
         SessionExpiredEventArgs? receivedArgs = null;
         machine.SessionExpiredDueToPauseTimeout += (_, e) => receivedArgs = e;
 
-        machine.Resume();
+        await machine.Resume();
 
         receivedArgs.Should().NotBeNull();
         receivedArgs.Phase.Should().Be(Phase.Work);
@@ -207,7 +208,7 @@ public class PomodoroStateMachineTests
         var expired = false;
         machine.SessionExpiredDueToPauseTimeout += (_, _) => expired = true;
 
-        machine.Tick();
+        await machine.Tick();
 
         expired.Should().BeFalse();
         machine.State.CurrentPhase.Should().Be(Phase.Work);
@@ -225,7 +226,7 @@ public class PomodoroStateMachineTests
         var expired = false;
         machine.SessionExpiredDueToPauseTimeout += (_, _) => expired = true;
 
-        machine.Tick();
+        await machine.Tick();
 
         expired.Should().BeTrue();
         machine.State.CurrentPhase.Should().Be(Phase.Idle);
@@ -244,7 +245,7 @@ public class PomodoroStateMachineTests
         var completed = false;
         machine.PhaseCompleted += (_, _) => completed = true;
 
-        machine.Tick();
+        await machine.Tick();
 
         completed.Should().BeFalse();
     }
@@ -260,7 +261,7 @@ public class PomodoroStateMachineTests
         PhaseCompletedEventArgs? receivedArgs = null;
         machine.PhaseCompleted += (_, e) => receivedArgs = e;
 
-        machine.Tick();
+        await machine.Tick();
 
         receivedArgs.Should().NotBeNull();
         receivedArgs!.CompletedPhase.Should().Be(Phase.Work);
@@ -276,7 +277,7 @@ public class PomodoroStateMachineTests
         var machine = await CreateMachineAsync(tp);
         machine.Start();
         tp.Advance(TimeSpan.FromMinutes(25));
-        machine.Tick(); // Work completes → ShortBreak prepared
+        await machine.Tick(); // Work completes → ShortBreak prepared
 
         machine.Start(); // start ShortBreak
         tp.Advance(TimeSpan.FromMinutes(5));
@@ -284,7 +285,7 @@ public class PomodoroStateMachineTests
         PhaseCompletedEventArgs? receivedArgs = null;
         machine.PhaseCompleted += (_, e) => receivedArgs = e;
 
-        machine.Tick();
+        await machine.Tick();
 
         receivedArgs!.CompletedPhase.Should().Be(Phase.ShortBreak);
         machine.State.CompletedWorkSessionsCount.Should().Be(1); // unchanged
@@ -299,7 +300,7 @@ public class PomodoroStateMachineTests
         machine.State.CompletedWorkSessionsCount = 3;
         machine.Start();
         tp.Advance(TimeSpan.FromMinutes(25));
-        machine.Tick(); // Work completes (count=4) → LongBreak prepared
+        await machine.Tick(); // Work completes (count=4) → LongBreak prepared
 
         machine.Start(); // start LongBreak
         tp.Advance(TimeSpan.FromMinutes(15));
@@ -307,7 +308,7 @@ public class PomodoroStateMachineTests
         PhaseCompletedEventArgs? receivedArgs = null;
         machine.PhaseCompleted += (_, e) => receivedArgs = e;
 
-        machine.Tick();
+        await machine.Tick();
 
         receivedArgs!.CompletedPhase.Should().Be(Phase.LongBreak);
         machine.State.CurrentPhase.Should().Be(Phase.Work);
@@ -326,7 +327,7 @@ public class PomodoroStateMachineTests
         PhaseCompletedEventArgs? receivedArgs = null;
         machine.PhaseCompleted += (_, e) => receivedArgs = e;
 
-        machine.Tick();
+        await machine.Tick();
 
         receivedArgs!.PlaySound.Should().BeFalse();
     }
@@ -343,19 +344,19 @@ public class PomodoroStateMachineTests
         tp.Advance(TimeSpan.FromMinutes(20));
         machine.Pause();
         tp.Advance(TimeSpan.FromMinutes(2)); // 2 min pause
-        machine.Resume(); // PauseAccumulated = 2 min
+        await machine.Resume(); // PauseAccumulated = 2 min
 
         // elapsed = 22 total - 2 pause = 20 min < 25 min → should NOT complete
         tp.Advance(TimeSpan.FromMinutes(4)); // total = 26 min, elapsed = 24 min < 25
 
         var completed = false;
         machine.PhaseCompleted += (_, _) => completed = true;
-        machine.Tick();
+        await machine.Tick();
         completed.Should().BeFalse();
 
         // advance 1 more minute: total = 27 min, elapsed = 25 min → should complete
         tp.Advance(TimeSpan.FromMinutes(1));
-        machine.Tick();
+        await machine.Tick();
         completed.Should().BeTrue();
     }
 
@@ -370,7 +371,7 @@ public class PomodoroStateMachineTests
 
         machine.Start();
         tp.Advance(TimeSpan.FromMinutes(25));
-        machine.Tick();
+        await machine.Tick();
 
         machine.State.CurrentPhase.Should().Be(Phase.LongBreak);
         machine.State.CompletedWorkSessionsCount.Should().Be(4);
@@ -387,7 +388,7 @@ public class PomodoroStateMachineTests
 
         machine.Start();
         tp.Advance(TimeSpan.FromMinutes(25));
-        machine.Tick(); // count = 2, 2 % 2 == 0 → LongBreak
+        await machine.Tick(); // count = 2, 2 % 2 == 0 → LongBreak
 
         machine.State.CurrentPhase.Should().Be(Phase.LongBreak);
     }
@@ -402,7 +403,7 @@ public class PomodoroStateMachineTests
         machine.Start();
         machine.Pause();
 
-        machine.Reset();
+        await machine.Reset();
 
         machine.State.CurrentPhase.Should().Be(Phase.Idle);
         machine.State.PhaseStartTimeUtc.Should().BeNull();
@@ -419,7 +420,7 @@ public class PomodoroStateMachineTests
         var tp = new FakeTimeProvider(Epoch);
         var machine = await CreateMachineAsync(tp);
 
-        machine.Skip();
+        await machine.Skip();
 
         machine.State.CurrentPhase.Should().Be(Phase.Idle);
     }
@@ -431,7 +432,7 @@ public class PomodoroStateMachineTests
         var machine = await CreateMachineAsync(tp);
         machine.Start(); // Work, CompletedWorkSessionsCount = 0
 
-        machine.Skip(); // 0 % 4 != 0 → ShortBreak
+        await machine.Skip(); // 0 % 4 != 0 → ShortBreak
 
         machine.State.CurrentPhase.Should().Be(Phase.ShortBreak);
     }
@@ -442,9 +443,9 @@ public class PomodoroStateMachineTests
         var tp = new FakeTimeProvider(Epoch);
         var machine = await CreateMachineAsync(tp);
         machine.Start();
-        machine.Skip(); // Work → ShortBreak
+        await machine.Skip(); // Work → ShortBreak
 
-        machine.Skip(); // ShortBreak → Work
+        await machine.Skip(); // ShortBreak → Work
 
         machine.State.CurrentPhase.Should().Be(Phase.Work);
     }
@@ -456,10 +457,185 @@ public class PomodoroStateMachineTests
         var machine = await CreateMachineAsync(tp);
         machine.State.CompletedWorkSessionsCount = 4;
         machine.Start();
-        machine.Skip(); // Work, count=4, 4 % 4 == 0 → LongBreak
+        await machine.Skip(); // Work, count=4, 4 % 4 == 0 → LongBreak
 
-        machine.Skip(); // LongBreak → Work
+        await machine.Skip(); // LongBreak → Work
 
         machine.State.CurrentPhase.Should().Be(Phase.Work);
+    }
+
+    // --- Progression ---
+
+    private static PomodoroSettings ProgressionSettings(int workMinutes = 25, int target = 35, int step = 5, int required = 2) =>
+        new PomodoroSettings
+        {
+            Timing = new TimingSettings { WorkMinutes = workMinutes },
+            Progression = new ProgressionSettings
+            {
+                ProgressionEnabled = true,
+                TargetWorkMinutes = target,
+                StepMinutes = step,
+                RequiredCompletionsToApplyStep = required
+            }
+        };
+
+    private static async Task CompleteWorkSession(PomodoroStateMachine machine, FakeTimeProvider tp)
+    {
+        machine.Start();
+        tp.Advance(TimeSpan.FromMinutes(machine.Settings.Timing.WorkMinutes));
+        await machine.Tick();
+    }
+
+    [Fact]
+    public async Task Progression_CounterIncrements_AfterWorkSessionCompletes()
+    {
+        var settings = ProgressionSettings(required: 3);
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        await CompleteWorkSession(machine, tp);
+
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Progression_StepApplied_WhenThresholdReached()
+    {
+        var settings = ProgressionSettings(workMinutes: 25, target: 35, step: 5, required: 2);
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        // First work session → counter = 1, machine enters ShortBreak
+        machine.Start();
+        tp.Advance(TimeSpan.FromMinutes(25));
+        await machine.Tick();
+
+        // Skip the break to return to Work
+        await machine.Skip(); // ShortBreak → Work (counter unchanged)
+
+        // Second work session → counter = 2 → threshold reached → step applied
+        machine.Start();
+        tp.Advance(TimeSpan.FromMinutes(25));
+        await machine.Tick();
+
+        machine.Settings.Timing.WorkMinutes.Should().Be(30);
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Progression_WorkMinutesCappedAtTarget()
+    {
+        var settings = ProgressionSettings(workMinutes: 33, target: 35, step: 5, required: 1);
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        await CompleteWorkSession(machine, tp);
+
+        machine.Settings.Timing.WorkMinutes.Should().Be(35);
+    }
+
+    [Fact]
+    public async Task Progression_StopsAtTarget()
+    {
+        var settings = ProgressionSettings(workMinutes: 35, target: 35, step: 5, required: 1);
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        await CompleteWorkSession(machine, tp);
+
+        machine.Settings.Timing.WorkMinutes.Should().Be(35);
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Progression_NotApplied_WhenDisabled()
+    {
+        var settings = ProgressionSettings(required: 1);
+        settings.Progression.ProgressionEnabled = false;
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        await CompleteWorkSession(machine, tp);
+
+        machine.Settings.Timing.WorkMinutes.Should().Be(25);
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Progression_CounterResets_OnWorkSkip()
+    {
+        var settings = ProgressionSettings(required: 3);
+        settings.Progression.SessionsCompletedTowardStep = 1; // pre-seed counter
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        machine.Start(); // start Work
+        await machine.Skip(); // abandon Work → counter resets
+
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Progression_CounterResets_OnWorkReset()
+    {
+        var settings = ProgressionSettings(required: 3);
+        settings.Progression.SessionsCompletedTowardStep = 1; // pre-seed counter
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        machine.Start(); // start Work
+        await machine.Reset(); // abandon Work → counter resets
+
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Progression_CounterResets_OnPauseTimeout_DuringWork()
+    {
+        var settings = ProgressionSettings(required: 3);
+        settings.Progression.SessionsCompletedTowardStep = 1; // pre-seed counter
+        settings.Timing.MaxPhasePauseMinutes = 5;
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        machine.Start(); // start Work
+        machine.Pause();
+        tp.Advance(TimeSpan.FromMinutes(6)); // exceed pause limit
+        await machine.Tick(); // triggers Reset internally
+
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(0);
+        machine.State.CurrentPhase.Should().Be(Phase.Idle);
+    }
+
+    [Fact]
+    public async Task Progression_CounterUnchanged_OnBreakSkip()
+    {
+        var settings = ProgressionSettings(required: 3);
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+        await CompleteWorkSession(machine, tp); // counter = 1, now in ShortBreak
+
+        machine.Start(); // start break
+        await machine.Skip(); // skip break (not Work) → counter unchanged
+
+        machine.Settings.Progression.SessionsCompletedTowardStep.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Progression_NextWorkPhaseUsesUpdatedDuration()
+    {
+        var settings = ProgressionSettings(workMinutes: 25, target: 35, step: 5, required: 1);
+        var tp = new FakeTimeProvider(Epoch);
+        var machine = await CreateMachineAsync(tp, settings);
+
+        await CompleteWorkSession(machine, tp); // WorkMinutes → 30, now in ShortBreak
+
+        // Start next Work phase
+        machine.Start(); // starts ShortBreak
+        tp.Advance(TimeSpan.FromMinutes(machine.Settings.Timing.ShortBreakMinutes));
+        await machine.Tick(); // ShortBreak completes → Work prepared with updated duration
+
+        machine.State.CurrentPhase.Should().Be(Phase.Work);
+        machine.State.PhaseDuration.Should().Be(TimeSpan.FromMinutes(30));
     }
 }

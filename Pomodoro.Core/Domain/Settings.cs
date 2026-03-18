@@ -23,6 +23,7 @@
         public int TargetWorkMinutes { get; set; } = 45;
         public int StepMinutes { get; set; } = 5;
         public int RequiredCompletionsToApplyStep { get; set; } = 10;
+        public int SessionsCompletedTowardStep { get; set; } = 0;
     }
 
     public sealed class NotificationSettings
@@ -35,4 +36,11 @@
         public bool EnableLogging { get; set; } = false;
     }
 
+    public sealed record PomodoroProgressionDetails(
+        bool ProgressionEnabled,
+        int WorkMinutes,
+        int TargetWorkMinutes,
+        int SessionsCompletedTowardStep,
+        int RequiredCompletionsToApplyStep
+    );
 }

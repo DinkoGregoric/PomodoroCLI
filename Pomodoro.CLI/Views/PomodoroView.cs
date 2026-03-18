@@ -21,6 +21,7 @@ namespace Pomodoro.CLI.Views
     {
         private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         private readonly PomodoroState state = engine.State;
+        private readonly PomodoroProgressionDetails _progressionDetails = engine.ProgressionDetails;
         private int _spinnerIndex = 0;
         private string? _sessionExpiredMessage = null;
         private string? _phaseCompletedMessage = null;
@@ -174,14 +175,22 @@ namespace Pomodoro.CLI.Views
                 new Markup($"[bold]{state.CurrentPhase}[/]"),
                 new Markup($"{bar} [bold]{progress:P0}[/]"),
                 new Markup($"Remaining: [bold]{remaining:mm\\:ss}[/]"),
-                new Rule(),
-                new Markup(statusLine)
             };
 
+            if (_progressionDetails.ProgressionEnabled)
+            {
+                rows.Add(_progressionDetails.WorkMinutes < _progressionDetails.TargetWorkMinutes
+                    ? new Markup($"Progression: [bold]{_progressionDetails.WorkMinutes}→{_progressionDetails.TargetWorkMinutes}[/] min | {_progressionDetails.SessionsCompletedTowardStep}/{_progressionDetails.RequiredCompletionsToApplyStep} sessions")
+                    : new Markup($"Progression: [bold]{_progressionDetails.WorkMinutes}[/] min (target reached)"));
+            }
+
+            rows.Add(new Rule());
+            rows.Add(new Markup(statusLine));
+
             if (_phaseCompletedMessage != null)
-                rows.Insert(3, new Markup(_phaseCompletedMessage));
+                rows.Insert(rows.Count - 2, new Markup(_phaseCompletedMessage));
             if (_sessionExpiredMessage != null)
-                rows.Insert(3, new Markup(_sessionExpiredMessage));
+                rows.Insert(rows.Count - 2, new Markup(_sessionExpiredMessage));
 
             return new Panel(new Rows(rows)).RoundedBorder().Header("[bold red]🍅 Pomodoro[/]");
         }

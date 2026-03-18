@@ -28,6 +28,12 @@ namespace Pomodoro.Core.Commands.Settings
             }
 
             var settings = loadResult.Value;
+
+            if (command.WorkMinutes != settings.Timing.WorkMinutes)
+            {
+                settings.Progression.SessionsCompletedTowardStep = 0;
+            }
+
             settings.Timing = new TimingSettings
             {
                 WorkMinutes = command.WorkMinutes,
@@ -50,7 +56,9 @@ namespace Pomodoro.Core.Commands.Settings
         {
             var validation = SettingsValidator.ValidateProgression(command);
             if (validation.IsFailure)
+            {
                 return Result<PomodoroSettings>.Failure(validation.Error);
+            }
 
             var loadResult = await settingsProvider.LoadSettingsAsync();
             if (loadResult.IsFailure)
@@ -64,7 +72,8 @@ namespace Pomodoro.Core.Commands.Settings
                 ProgressionEnabled = command.ProgressionEnabled,
                 TargetWorkMinutes = command.TargetWorkMinutes,
                 StepMinutes = command.StepMinutes,
-                RequiredCompletionsToApplyStep = command.RequiredCompletionsToApplyStep
+                RequiredCompletionsToApplyStep = command.RequiredCompletionsToApplyStep,
+                SessionsCompletedTowardStep = command.ProgressionEnabled ? settings.Progression.SessionsCompletedTowardStep : 0
             };
 
             var saveResult = await settingsProvider.SaveSettingsAsync(settings);
