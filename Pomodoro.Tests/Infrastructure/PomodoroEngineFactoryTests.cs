@@ -13,8 +13,11 @@ public class PomodoroEngineFactoryTests
 {
     private static readonly DateTimeOffset Epoch = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-    private static PomodoroEngineFactory CreateFactory(ISettingsProvider provider) =>
-        new(provider, new FakeTimeProvider(Epoch));
+    private static PomodoroEngineFactory CreateFactory(ISettingsProvider provider)
+    {
+        provider.SaveSettingsAsync(Arg.Any<PomodoroSettings>()).Returns(Task.FromResult(Result.Success()));
+        return new(provider, new FakeTimeProvider(Epoch));
+    }
 
     [Fact]
     public async Task CreateAsync_WhenSettingsLoadFails_ReturnsFailure()

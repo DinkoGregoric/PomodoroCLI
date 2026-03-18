@@ -9,6 +9,7 @@ namespace Pomodoro.Core.Engine
         private readonly PomodoroStateMachine _machine;
 
         public PomodoroState State => _machine.State;
+        public PomodoroSettings Settings => _machine.Settings;
         public ICommandDispatcher Dispatcher { get; }
 
         public event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;

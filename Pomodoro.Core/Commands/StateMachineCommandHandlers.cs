@@ -24,37 +24,37 @@ namespace Pomodoro.Core.Commands
 
     internal sealed class ResumeCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<ResumeCommand, Result>
     {
-        public Task<Result> HandleAsync(ResumeCommand command, CancellationToken cancellationToken = default)
+        public async Task<Result> HandleAsync(ResumeCommand command, CancellationToken cancellationToken = default)
         {
-            stateMachine.Resume();
-            return Task.FromResult(Result.Success());
+            await stateMachine.Resume();
+            return Result.Success();
         }
     }
 
     internal sealed class AdvanceTimeCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<AdvanceTimeCommand, Result>
     {
-        public Task<Result> HandleAsync(AdvanceTimeCommand command, CancellationToken cancellationToken = default)
+        public async Task<Result> HandleAsync(AdvanceTimeCommand command, CancellationToken cancellationToken = default)
         {
-            stateMachine.Tick();
-            return Task.FromResult(Result.Success());
+            await stateMachine.Tick();
+            return Result.Success();
         }
     }
 
     internal sealed class ResetPhaseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<ResetPhaseCommand, Result>
     {
-        public Task<Result> HandleAsync(ResetPhaseCommand command, CancellationToken cancellationToken = default)
+        public async Task<Result> HandleAsync(ResetPhaseCommand command, CancellationToken cancellationToken = default)
         {
-            stateMachine.Reset();
-            return Task.FromResult(Result.Success());
+            await stateMachine.Reset();
+            return Result.Success();
         }
     }
 
     internal sealed class SkipPhaseCommandHandler(PomodoroStateMachine stateMachine) : ICommandHandler<SkipPhaseCommand, Result>
     {
-        public Task<Result> HandleAsync(SkipPhaseCommand command, CancellationToken cancellationToken = default)
+        public async Task<Result> HandleAsync(SkipPhaseCommand command, CancellationToken cancellationToken = default)
         {
-            stateMachine.Skip();
-            return Task.FromResult(Result.Success());
+            await stateMachine.Skip();
+            return Result.Success();
         }
     }
 }

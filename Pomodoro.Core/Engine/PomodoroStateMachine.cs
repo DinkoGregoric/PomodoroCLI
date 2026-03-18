@@ -9,16 +9,19 @@ namespace Pomodoro.Core.Engine
     {
         private readonly PomodoroSettings _settings;
         private readonly TimeProvider _timeProvider;
+        private readonly ISettingsProvider _settingsProvider;
 
         internal event EventHandler<SessionExpiredEventArgs>? SessionExpiredDueToPauseTimeout;
         internal event EventHandler<PhaseCompletedEventArgs>? PhaseCompleted;
 
         internal PomodoroState State { get; }
+        internal PomodoroSettings Settings => _settings;
 
-        private PomodoroStateMachine(TimeProvider timeProvider, PomodoroSettings settings)
+        private PomodoroStateMachine(TimeProvider timeProvider, ISettingsProvider settingsProvider, PomodoroSettings settings)
         {
             State = new PomodoroState();
             _timeProvider = timeProvider;
+            _settingsProvider = settingsProvider;
             _settings = settings;
         }
 
@@ -30,7 +33,7 @@ namespace Pomodoro.Core.Engine
                 return Result<PomodoroStateMachine>.Failure(settings.Error);
             }
 
-            return Result<PomodoroStateMachine>.Success(new PomodoroStateMachine(timeProvider, settings.Value));
+            return Result<PomodoroStateMachine>.Success(new PomodoroStateMachine(timeProvider, settingsProvider, settings.Value));
         }
 
         internal void Start()
@@ -55,7 +58,7 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        internal void Resume()
+        internal async Task Resume()
         {
             if (State.PausedAtUtc != null)
             {
@@ -63,8 +66,7 @@ namespace Pomodoro.Core.Engine
                 if (pausedDuration > TimeSpan.FromMinutes(_settings.Timing.MaxPhasePauseMinutes))
                 {
                     var eventArgs = new SessionExpiredEventArgs(State.CurrentPhase, _settings.Timing.MaxPhasePauseMinutes);
-                    OnSessionExpired(eventArgs);
-                    Reset();
+                    await OnSessionExpired(eventArgs);
                     return;
                 }
                 State.PauseAccumulated += pausedDuration;
@@ -72,7 +74,7 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        internal void Tick()
+        internal async Task Tick()
         {
             if (State.PausedAtUtc != null)
             {
@@ -80,8 +82,7 @@ namespace Pomodoro.Core.Engine
                 if (pausedDuration > TimeSpan.FromMinutes(_settings.Timing.MaxPhasePauseMinutes))
                 {
                     var eventArgs = new SessionExpiredEventArgs(State.CurrentPhase, _settings.Timing.MaxPhasePauseMinutes);
-                    OnSessionExpired(eventArgs);
-                    Reset();
+                    await OnSessionExpired(eventArgs);
                     return;
                 }
             }
@@ -94,6 +95,21 @@ namespace Pomodoro.Core.Engine
                     if (State.CurrentPhase == Phase.Work)
                     {
                         State.CompletedWorkSessionsCount++;
+
+                        if (_settings.Progression.ProgressionEnabled &&
+                            _settings.Timing.WorkMinutes < _settings.Progression.TargetWorkMinutes)
+                        {
+                            _settings.Progression.SessionsCompletedTowardStep++;
+                            if (_settings.Progression.SessionsCompletedTowardStep >= _settings.Progression.RequiredCompletionsToApplyStep)
+                            {
+                                _settings.Timing.WorkMinutes = Math.Min(
+                                    _settings.Timing.WorkMinutes + _settings.Progression.StepMinutes,
+                                    _settings.Progression.TargetWorkMinutes);
+                                _settings.Progression.SessionsCompletedTowardStep = 0;
+                            }
+                        }
+
+                        await _settingsProvider.SaveSettingsAsync(_settings);
                     }
                     var completedPhase = State.CurrentPhase;
                     PrepareNextPhase();
@@ -102,8 +118,14 @@ namespace Pomodoro.Core.Engine
             }
         }
 
-        internal void Reset()
+        internal async Task Reset()
         {
+            if (State.CurrentPhase == Phase.Work && _settings.Progression.ProgressionEnabled)
+            {
+                _settings.Progression.SessionsCompletedTowardStep = 0;
+                await _settingsProvider.SaveSettingsAsync(_settings);
+            }
+
             State.CurrentPhase = Phase.Idle;
             State.PhaseStartTimeUtc = null;
             State.PhaseDuration = null;
@@ -111,16 +133,22 @@ namespace Pomodoro.Core.Engine
             State.PauseAccumulated = TimeSpan.Zero;
         }
 
-        internal void Skip()
+        internal async Task Skip()
         {
             if (State.CurrentPhase != Phase.Idle)
             {
+                if (State.CurrentPhase == Phase.Work && _settings.Progression.ProgressionEnabled)
+                {
+                    _settings.Progression.SessionsCompletedTowardStep = 0;
+                    await _settingsProvider.SaveSettingsAsync(_settings);
+                }
                 PrepareNextPhase();
             }
         }
 
-        private void OnSessionExpired(SessionExpiredEventArgs e)
+        private async Task OnSessionExpired(SessionExpiredEventArgs e)
         {
+            await Reset();
             SessionExpiredDueToPauseTimeout?.Invoke(this, e);
         }
 

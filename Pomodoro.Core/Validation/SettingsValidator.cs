@@ -39,8 +39,8 @@ namespace Pomodoro.Core.Validation
             if (cmd.StepMinutes is < 1 or > 30)
                 return Result.Failure(new Error("Progression.StepMinutes.OutOfRange", "Step size must be between 1 and 30 minutes."));
 
-            if (cmd.RequiredCompletionsToApplyStep is < 1 or > 100)
-                return Result.Failure(new Error("Progression.RequiredCompletions.OutOfRange", "Required completions must be between 1 and 100."));
+            if (cmd.RequiredCompletionsToApplyStep is < 1 or > 50)
+                return Result.Failure(new Error("Progression.RequiredCompletions.OutOfRange", "Required completions must be between 1 and 50."));
 
             if (cmd.TargetWorkMinutes <= cmd.StepMinutes)
                 return Result.Failure(new Error("Progression.TargetWorkMinutes.MustExceedStep", "Target work duration must be greater than the step size."));

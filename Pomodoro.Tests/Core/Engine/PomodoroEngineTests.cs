@@ -19,6 +19,7 @@ public class PomodoroEngineTests
         settings ??= new PomodoroSettings();
         var provider = Substitute.For<ISettingsProvider>();
         provider.LoadSettingsAsync().Returns(Result<PomodoroSettings>.Success(settings));
+        provider.SaveSettingsAsync(Arg.Any<PomodoroSettings>()).Returns(Task.FromResult(Result.Success()));
         return (await PomodoroStateMachine.CreateAsync(provider, timeProvider)).Value;
     }
 
@@ -44,7 +45,7 @@ public class PomodoroEngineTests
         PhaseCompletedEventArgs? received = null;
         engine.PhaseCompleted += (_, e) => received = e;
 
-        machine.Tick();
+        await machine.Tick();
 
         received.Should().NotBeNull();
         received!.CompletedPhase.Should().Be(Phase.Work);
@@ -67,7 +68,7 @@ public class PomodoroEngineTests
         SessionExpiredEventArgs? received = null;
         engine.SessionExpiredDueToPauseTimeout += (_, e) => received = e;
 
-        machine.Tick();
+        await machine.Tick();
 
         received.Should().NotBeNull();
         received!.Phase.Should().Be(Phase.Work);
