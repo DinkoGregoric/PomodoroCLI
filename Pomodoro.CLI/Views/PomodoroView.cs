@@ -20,8 +20,6 @@ namespace Pomodoro.CLI.Views
         IAppLogger logger)
     {
         private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-        private readonly PomodoroState state = engine.State;
-        private readonly PomodoroProgressionDetails _progressionDetails = engine.ProgressionDetails;
         private int _spinnerIndex = 0;
         private string? _sessionExpiredMessage = null;
         private string? _phaseCompletedMessage = null;
@@ -60,12 +58,12 @@ namespace Pomodoro.CLI.Views
                                             _beepCts?.Cancel();
                                             _sessionExpiredMessage = null;
                                             _phaseCompletedMessage = null;
-                                            if (state.CurrentPhase == Phase.Idle || !state.PhaseStartTimeUtc.HasValue)
+                                            if (engine.State.CurrentPhase == Phase.Idle || !engine.State.PhaseStartTimeUtc.HasValue)
                                             {
                                                 var r = await start.ExecuteAsync();
                                                 if (r.IsFailure) logger.Warning($"Start failed: {r.Error.Message}");
                                             }
-                                            else if (state.IsRunning)
+                                            else if (engine.State.IsRunning)
                                             {
                                                 var r = await pause.ExecuteAsync();
                                                 if (r.IsFailure) logger.Warning($"Pause failed: {r.Error.Message}");
@@ -153,15 +151,15 @@ namespace Pomodoro.CLI.Views
 
             var barWidth = 40;
             var filled = (int)(barWidth * progress);
-            var spinner = state.IsRunning ? $"[green]{SpinnerFrames[_spinnerIndex++ % SpinnerFrames.Length]}[/] " : string.Empty;
+            var spinner = engine.State.IsRunning ? $"[green]{SpinnerFrames[_spinnerIndex++ % SpinnerFrames.Length]}[/] " : string.Empty;
             var bar = $"{spinner}[green]{new string('█', filled)}[/][grey]{new string('░', barWidth - filled)}[/]";
 
             string statusLine;
-            if (state.CurrentPhase == Phase.Idle || !state.PhaseStartTimeUtc.HasValue)
+            if (engine.State.CurrentPhase == Phase.Idle || !engine.State.PhaseStartTimeUtc.HasValue)
             {
                 statusLine = "[dim][[S]] Start [[Q]] Quit[/]";
             }
-            else if (state.PausedAtUtc.HasValue)
+            else if (engine.State.PausedAtUtc.HasValue)
             {
                 statusLine = "[yellow]Paused[/]  [dim][[S]] Resume  [[K]] Skip  [[T]] Reset  [[Q]] Quit[/]";
             }
@@ -172,16 +170,16 @@ namespace Pomodoro.CLI.Views
 
             var rows = new List<IRenderable>
             {
-                new Markup($"[bold]{state.CurrentPhase}[/]"),
+                new Markup($"[bold]{engine.State.CurrentPhase}[/]"),
                 new Markup($"{bar} [bold]{progress:P0}[/]"),
                 new Markup($"Remaining: [bold]{remaining:mm\\:ss}[/]"),
             };
 
-            if (_progressionDetails.ProgressionEnabled)
+            if (engine.ProgressionDetails.ProgressionEnabled)
             {
-                rows.Add(_progressionDetails.WorkMinutes < _progressionDetails.TargetWorkMinutes
-                    ? new Markup($"Progression: [bold]{_progressionDetails.WorkMinutes}→{_progressionDetails.TargetWorkMinutes}[/] min | {_progressionDetails.SessionsCompletedTowardStep}/{_progressionDetails.RequiredCompletionsToApplyStep} sessions")
-                    : new Markup($"Progression: [bold]{_progressionDetails.WorkMinutes}[/] min (target reached)"));
+                rows.Add(engine.ProgressionDetails.WorkMinutes < engine.ProgressionDetails.TargetWorkMinutes
+                    ? new Markup($"Progression: [bold]{engine.ProgressionDetails.WorkMinutes}→{engine.ProgressionDetails.TargetWorkMinutes}[/] min | {engine.ProgressionDetails.SessionsCompletedTowardStep}/{engine.ProgressionDetails.RequiredCompletionsToApplyStep} sessions")
+                    : new Markup($"Progression: [bold]{engine.ProgressionDetails.WorkMinutes}[/] min (target reached)"));
             }
 
             rows.Add(new Rule());
@@ -197,32 +195,32 @@ namespace Pomodoro.CLI.Views
 
         private double ComputeProgress()
         {
-            if (!state.PhaseStartTimeUtc.HasValue || !state.PhaseDuration.HasValue)
+            if (!engine.State.PhaseStartTimeUtc.HasValue || !engine.State.PhaseDuration.HasValue)
                 return 0;
 
             TimeSpan elapsed;
 
-            if (state.PausedAtUtc.HasValue)
+            if (engine.State.PausedAtUtc.HasValue)
             {
-                elapsed = state.PausedAtUtc.Value - state.PhaseStartTimeUtc.Value - state.PauseAccumulated;
+                elapsed = engine.State.PausedAtUtc.Value - engine.State.PhaseStartTimeUtc.Value - engine.State.PauseAccumulated;
             }
             else
             {
                 var currentTime = timeProvider.GetUtcNow();
-                elapsed = currentTime - state.PhaseStartTimeUtc.Value - state.PauseAccumulated;
+                elapsed = currentTime - engine.State.PhaseStartTimeUtc.Value - engine.State.PauseAccumulated;
             }
 
-            return Math.Clamp(elapsed / state.PhaseDuration.Value, 0, 1);
+            return Math.Clamp(elapsed / engine.State.PhaseDuration.Value, 0, 1);
         }
 
         private TimeSpan ComputeRemaining()
         {
-            if (!state.PhaseStartTimeUtc.HasValue || !state.PhaseDuration.HasValue)
-                return state.PhaseDuration ?? TimeSpan.Zero;
+            if (!engine.State.PhaseStartTimeUtc.HasValue || !engine.State.PhaseDuration.HasValue)
+                return engine.State.PhaseDuration ?? TimeSpan.Zero;
 
-            if (state.PausedAtUtc.HasValue)
+            if (engine.State.PausedAtUtc.HasValue)
             {
-                return GetRemainingTime(state.PausedAtUtc.Value);
+                return GetRemainingTime(engine.State.PausedAtUtc.Value);
             }
 
             return GetRemainingTime(timeProvider.GetUtcNow());
@@ -230,11 +228,11 @@ namespace Pomodoro.CLI.Views
 
         private TimeSpan GetRemainingTime(DateTimeOffset asOfTime)
         {
-            if (!state.PhaseStartTimeUtc.HasValue || !state.PhaseDuration.HasValue)
-                return state.PhaseDuration ?? TimeSpan.Zero;
+            if (!engine.State.PhaseStartTimeUtc.HasValue || !engine.State.PhaseDuration.HasValue)
+                return engine.State.PhaseDuration ?? TimeSpan.Zero;
 
-            var elapsed = asOfTime - state.PhaseStartTimeUtc.Value - state.PauseAccumulated;
-            var remaining = state.PhaseDuration.Value - elapsed;
+            var elapsed = asOfTime - engine.State.PhaseStartTimeUtc.Value - engine.State.PauseAccumulated;
+            var remaining = engine.State.PhaseDuration.Value - elapsed;
             return remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining;
         }
     }
