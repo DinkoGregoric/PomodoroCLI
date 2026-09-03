@@ -41,6 +41,7 @@ jobs:
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:DebugType=none \
+            -p:Version=${GITHUB_REF_NAME#v} \
             -o ./publish
 
       - name: Rename artifact (Windows)
